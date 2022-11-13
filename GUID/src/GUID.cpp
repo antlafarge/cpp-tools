@@ -1,6 +1,6 @@
 #include "GUID.h"
 
-#include "../Base64/src/Base64.helpers.h"
+#include "Base64.helpers.h"
 
 #include <cstring>
 #include <stdexcept>
