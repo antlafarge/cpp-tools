@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# sudo apt install g++
-# cd /mnt/c/Users/[username]/Documents/cpp-tools/GUID
-
 if [[ "$1" == "build" || $# -eq 0 ]]; then
     echo "========= Build ========="
-    g++ -Werror -Wall -Wextra -Wno-unknown-pragmas -g -Isrc -I../Base64/src ../Base64/src/*.cpp src/*.cpp test/test.cpp -o test.bin
+    g++ \
+        -Werror -Wall -Wextra -Wno-unknown-pragmas \
+        -g \
+        -Isrc -I../Base64/src \
+        -o test.bin \
+        ../Base64/src/*.cpp src/*.cpp test/test.cpp
 fi
 
 if [[ ($? -eq 0) && ("$1" == "run" || $# -eq 0) ]]; then

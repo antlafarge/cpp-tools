@@ -1,11 +1,16 @@
 #!/bin/bash
 
-# sudo apt install g++
-# cd /mnt/c/Users/[username]/Documents/cpp-tools/JSON
+if [[ "$1" == "build" || $# -eq 0 ]]; then
+    echo "========= Build ========="
+    g++ \
+        -Werror -Wall -Wextra -Wno-unknown-pragmas \
+        -g \
+        -Isrc \
+        -o test.bin \
+        src/*.cpp test/test.cpp
+fi
 
-g++ -Werror -Wall -Wextra -Wno-unknown-pragmas src/*.cpp test.cpp -o test.bin
-
-if [ $? -eq 0 ]
-then
+if [[ ($? -eq 0) && ("$1" == "run" || $# -eq 0) ]]; then
+    echo "========= Run ==========="
     ./test.bin
 fi
