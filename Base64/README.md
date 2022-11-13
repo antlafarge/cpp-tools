@@ -150,7 +150,7 @@ High-level functions can throw exceptions
 ```cpp
 try
 {
-	auto encodedData1 = Base64::decode("A", );
+	auto encodedData = Base64::decode("A", 1);
 }
 catch (const std::exception& ex)
 {
