@@ -1,4 +1,5 @@
 #include "GUID.h"
+#include "Base64.helpers.h"
 
 #include <stdexcept>
 
@@ -26,7 +27,7 @@ std::string GUID::toString(const GUID& guid, GuidFormat format)
 {
     if (format == GuidFormat::Base64) [[likely]]
     {
-        return Base64::base64_encode((byte*)&guid._g1, sizeof(guid._g1) + sizeof(guid._g2));
+        return Base64::encode(&guid._g1, (sizeof(guid._g1) + sizeof(guid._g2)));
     }
     else if (format == GuidFormat::N) [[unlikely]]
     {
@@ -85,10 +86,10 @@ GUID GUID::toGUID(const std::string& guidStr)
     size_t guidSize = guidStr.size();
     if (guidSize == 24)
     {
-        auto res = Base64::base64_decode(guidStr);
+        auto res = Base64::decode(guidStr);
         auto* dataPtr = res.data();
-        memcpy(&guid._g1, dataPtr, sizeof(guid._g1));
-        memcpy(&guid._g2, dataPtr + sizeof(guid._g1), sizeof(guid._g2));
+        std::memcpy(&guid._g1, dataPtr, sizeof(guid._g1));
+        std::memcpy(&guid._g2, dataPtr + sizeof(guid._g1), sizeof(guid._g2));
         scanRet = 11;
     }
     else if (guidSize == 32)

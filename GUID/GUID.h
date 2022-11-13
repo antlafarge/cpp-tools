@@ -2,10 +2,6 @@
 
 #include <string>
 
-#include "../Base64/Base64.h"
-
-using byte = uint8_t;
-
 enum class GuidFormat
 {
     N = 0,
