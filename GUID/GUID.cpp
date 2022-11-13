@@ -1,6 +1,8 @@
 #include "GUID.h"
-#include "Base64.helpers.h"
 
+#include "../Base64/src/Base64.helpers.h"
+
+#include <cstring>
 #include <stdexcept>
 
 GUID::GUID(const std::string& guidStr)
@@ -27,36 +29,36 @@ std::string GUID::toString(const GUID& guid, GuidFormat format)
 {
     if (format == GuidFormat::Base64) [[likely]]
     {
-        return Base64::encode(&guid._g1, (sizeof(guid._g1) + sizeof(guid._g2)));
+        return Base64::encode(&guid._g1, sizeof(guid._g1) + sizeof(guid._g2));
     }
     else if (format == GuidFormat::N) [[unlikely]]
     {
         char output[33] = {};
-        snprintf(output, 33, "%08lX%04hX%04hX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", (uint32_t)(guid._g1 >> 32), (uint16_t)(guid._g1 >> 16), (uint16_t)(guid._g1), (uint8_t)(guid._g2 >> 56), (uint8_t)(guid._g2 >> 48), (uint8_t)(guid._g2 >> 40), (uint8_t)(guid._g2 >> 32), (uint8_t)(guid._g2 >> 24), (uint8_t)(guid._g2 >> 16), (uint8_t)(guid._g2 >> 8), (uint8_t)(guid._g2));
+        snprintf(output, 33, "%08X%04hX%04hX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", (uint32_t)(guid._g1 >> 32), (uint16_t)(guid._g1 >> 16), (uint16_t)(guid._g1), (uint8_t)(guid._g2 >> 56), (uint8_t)(guid._g2 >> 48), (uint8_t)(guid._g2 >> 40), (uint8_t)(guid._g2 >> 32), (uint8_t)(guid._g2 >> 24), (uint8_t)(guid._g2 >> 16), (uint8_t)(guid._g2 >> 8), (uint8_t)(guid._g2));
         return std::string(output, 32);
     }
     else if (format == GuidFormat::D) [[unlikely]]
     {
         char output[37] = {};
-        snprintf(output, 37, "%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", (uint32_t)(guid._g1 >> 32), (uint16_t)(guid._g1 >> 16), (uint16_t)(guid._g1), (uint8_t)(guid._g2 >> 56), (uint8_t)(guid._g2 >> 48), (uint8_t)(guid._g2 >> 40), (uint8_t)(guid._g2 >> 32), (uint8_t)(guid._g2 >> 24), (uint8_t)(guid._g2 >> 16), (uint8_t)(guid._g2 >> 8), (uint8_t)(guid._g2));
+        snprintf(output, 37, "%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", (uint32_t)(guid._g1 >> 32), (uint16_t)(guid._g1 >> 16), (uint16_t)(guid._g1), (uint8_t)(guid._g2 >> 56), (uint8_t)(guid._g2 >> 48), (uint8_t)(guid._g2 >> 40), (uint8_t)(guid._g2 >> 32), (uint8_t)(guid._g2 >> 24), (uint8_t)(guid._g2 >> 16), (uint8_t)(guid._g2 >> 8), (uint8_t)(guid._g2));
         return std::string(output, 36);
     }
     else if (format == GuidFormat::B) [[unlikely]]
     {
         char output[39] = {};
-        snprintf(output, 39, "{%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}", (uint32_t)(guid._g1 >> 32), (uint16_t)(guid._g1 >> 16), (uint16_t)(guid._g1), (uint8_t)(guid._g2 >> 56), (uint8_t)(guid._g2 >> 48), (uint8_t)(guid._g2 >> 40), (uint8_t)(guid._g2 >> 32), (uint8_t)(guid._g2 >> 24), (uint8_t)(guid._g2 >> 16), (uint8_t)(guid._g2 >> 8), (uint8_t)(guid._g2));
+        snprintf(output, 39, "{%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}", (uint32_t)(guid._g1 >> 32), (uint16_t)(guid._g1 >> 16), (uint16_t)(guid._g1), (uint8_t)(guid._g2 >> 56), (uint8_t)(guid._g2 >> 48), (uint8_t)(guid._g2 >> 40), (uint8_t)(guid._g2 >> 32), (uint8_t)(guid._g2 >> 24), (uint8_t)(guid._g2 >> 16), (uint8_t)(guid._g2 >> 8), (uint8_t)(guid._g2));
         return std::string(output, 38);
     }
     else if (format == GuidFormat::P) [[unlikely]]
     {
         char output[39] = {};
-        snprintf(output, 39, "(%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX)", (uint32_t)(guid._g1 >> 32), (uint16_t)(guid._g1 >> 16), (uint16_t)(guid._g1), (uint8_t)(guid._g2 >> 56), (uint8_t)(guid._g2 >> 48), (uint8_t)(guid._g2 >> 40), (uint8_t)(guid._g2 >> 32), (uint8_t)(guid._g2 >> 24), (uint8_t)(guid._g2 >> 16), (uint8_t)(guid._g2 >> 8), (uint8_t)(guid._g2));
+        snprintf(output, 39, "(%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX)", (uint32_t)(guid._g1 >> 32), (uint16_t)(guid._g1 >> 16), (uint16_t)(guid._g1), (uint8_t)(guid._g2 >> 56), (uint8_t)(guid._g2 >> 48), (uint8_t)(guid._g2 >> 40), (uint8_t)(guid._g2 >> 32), (uint8_t)(guid._g2 >> 24), (uint8_t)(guid._g2 >> 16), (uint8_t)(guid._g2 >> 8), (uint8_t)(guid._g2));
         return std::string(output, 38);
     }
     else if (format == GuidFormat::X) [[unlikely]]
     {
         char output[69] = {};
-        snprintf(output, 69, "{0x%08lX,0x%04hX,0x%04hX,{0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX}}", (uint32_t)(guid._g1 >> 32), (uint16_t)(guid._g1 >> 16), (uint16_t)(guid._g1), (uint8_t)(guid._g2 >> 56), (uint8_t)(guid._g2 >> 48), (uint8_t)(guid._g2 >> 40), (uint8_t)(guid._g2 >> 32), (uint8_t)(guid._g2 >> 24), (uint8_t)(guid._g2 >> 16), (uint8_t)(guid._g2 >> 8), (uint8_t)(guid._g2));
+        snprintf(output, 69, "{0x%08X,0x%04hX,0x%04hX,{0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX}}", (uint32_t)(guid._g1 >> 32), (uint16_t)(guid._g1 >> 16), (uint16_t)(guid._g1), (uint8_t)(guid._g2 >> 56), (uint8_t)(guid._g2 >> 48), (uint8_t)(guid._g2 >> 40), (uint8_t)(guid._g2 >> 32), (uint8_t)(guid._g2 >> 24), (uint8_t)(guid._g2 >> 16), (uint8_t)(guid._g2 >> 8), (uint8_t)(guid._g2));
         return std::string(output, 68);
     }
 
@@ -94,26 +96,26 @@ GUID GUID::toGUID(const std::string& guidStr)
     }
     else if (guidSize == 32)
     {
-        scanRet = sscanf_s(data, "%08lX%04hX%04hX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+        scanRet = sscanf(data, "%08X%04hX%04hX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
     }
     else if (guidSize == 36)
     {
-        scanRet = sscanf_s(data, "%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+        scanRet = sscanf(data, "%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
     }
     else if (guidSize == 38)
     {
         if (data[0] == '{')
         {
-            scanRet = sscanf_s(data, "{%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+            scanRet = sscanf(data, "{%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
         }
         else
         {
-            scanRet = sscanf_s(data, "(%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX)", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+            scanRet = sscanf(data, "(%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX)", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
         }
     }
     else if (guidSize == 68)
     {
-        scanRet = sscanf_s(data, "{0x%08lX,0x%04hX,0x%04hX,{0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX}}", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+        scanRet = sscanf(data, "{0x%08X,0x%04hX,0x%04hX,{0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX}}", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
     }
 
     if (scanRet != 11)
