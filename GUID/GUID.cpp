@@ -138,7 +138,7 @@ GUID GUID::generate()
     static int randBits = 0;
     if (randBits == 0)
     {
-        srand(time(NULL));
+        srand((uint32_t)time(NULL));
         for (int r = RAND_MAX; r > 0; r >>= 1) randBits++;
     }
 
