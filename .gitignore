@@ -1,0 +1,6 @@
+*.user
+**/.vs/*
+**/[Dd]ebug/*
+**/[Rr]elease/*
+data.json
+*.bin

@@ -1,0 +1,4 @@
+new TextEncoder().encode("🐈");
+new TextDecoder("utf-8").decode(new Uint8Array([0xF0,0x9F,0x90,0x88]));
+"🐈"[0]
+"🐈"[1]
