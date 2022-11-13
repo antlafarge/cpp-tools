@@ -4,22 +4,14 @@
 #include "json_unicode.h"
 
 #include <array>
-//#include <cassert>
-//#include <cfloat>
-//#include <cstdint>
-//#include <cstring>
 #include <deque>
 #include <forward_list>
 #include <functional>
-//#include <iostream>
-//#include <limits>
 #include <list>
 #include <map>
 #include <queue>
 #include <set>
-//#include <sstream>
 #include <stack>
-//#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -467,7 +459,7 @@ namespace JSON
 	bool isValid(std::istream&& stream, const Options& options = Options()) noexcept;
 
 	bool isValid(std::istream& stream, const Options& options = Options()) noexcept;
-	
+
 	template<class TValue>
 	void deserialize(const std::string& json, TValue& value, const Options& options = Options());
 

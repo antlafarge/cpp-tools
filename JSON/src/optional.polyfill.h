@@ -378,7 +378,7 @@ namespace std
 	{
 		return std::optional<T>(std::in_place, std::forward<Args>(args)...);
 	}
-	
+
 	template<class T, class U, class... Args>
 	constexpr std::optional<T> make_optional(std::initializer_list<U> il, Args&&... args)
 	{

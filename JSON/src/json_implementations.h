@@ -3,6 +3,7 @@
 #include "json_definitions.h"
 
 #include <iomanip>
+#include <limits>
 #include <sstream>
 
 #pragma GCC diagnostic push
@@ -335,7 +336,7 @@ namespace JSON
 		{
 			deserializeValue(it->second, &fieldValue.value);
 		}
-		deserializeFieldValue(value,  fieldValues...);
+		deserializeFieldValue(value, fieldValues...);
 	}
 
 	template<class TValue>
@@ -370,28 +371,28 @@ namespace JSON
 				}
 			}
 		}
-		if (codePoint == EOF) [[unlikely]]
-		{
-			throw std::runtime_error("json_deserialize_null_truncated");
-		}
-
-		for (int i = 0; i < size; i++)
-		{
-			stream.unget();
-		}
-
-		if (value) [[likely]]
-		{
-			if (!*value) [[unlikely]]
+			if (codePoint == EOF) [[unlikely]]
 			{
-				*value = TValue();
+				throw std::runtime_error("json_deserialize_null_truncated");
 			}
-			deserializeValue(stream, &**value, options);
-		}
-		else [[unlikely]]
-		{
-			deserializeValue(stream, (TValue*)nullptr, options);
-		}
+
+					for (int i = 0; i < size; i++)
+					{
+						stream.unget();
+					}
+
+					if (value) [[likely]]
+					{
+						if (!*value) [[unlikely]]
+						{
+							*value = TValue();
+						}
+						deserializeValue(stream, &**value, options);
+					}
+					else [[unlikely]]
+					{
+						deserializeValue(stream, (TValue*)nullptr, options);
+					}
 	}
 
 	template<class TValue, std::size_t TSize>
@@ -568,46 +569,46 @@ namespace JSON
 			{
 				throw std::runtime_error("json_deserialize_array_truncated");
 			}
-			if (!first) [[likely]]
-			{
-				if (codePoint == ']') [[unlikely]]
+				if (!first) [[likely]]
 				{
-					return;
+					if (codePoint == ']') [[unlikely]]
+					{
+						return;
+					}
+						if (codePoint != ',') [[unlikely]]
+						{
+							throw std::runtime_error("json_deserialize_array_invalid(,)");
+						}
 				}
-				if (codePoint != ',') [[unlikely]]
+				else [[unlikely]]
 				{
-					throw std::runtime_error("json_deserialize_array_invalid(,)");
+					if (codePoint != '[') [[unlikely]]
+					{
+						throw std::runtime_error("json_deserialize_array_invalid([)");
+					}
+					JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+					if (codePoint == EOF) [[unlikely]]
+					{
+						throw std::runtime_error("json_deserialize_array_truncated");
+					}
+						if (codePoint == ']') [[unlikely]]
+						{
+							return;
+						}
+					stream.unget();
+					first = false;
 				}
-			}
-			else [[unlikely]]
-			{
-				if (codePoint != '[') [[unlikely]]
-				{
-					throw std::runtime_error("json_deserialize_array_invalid([)");
-				}
-				JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-				if (codePoint == EOF) [[unlikely]]
-				{
-					throw std::runtime_error("json_deserialize_array_truncated");
-				}
-				if (codePoint == ']') [[unlikely]]
-				{
-					return;
-				}
-				stream.unget();
-				first = false;
-			}
-			if (container) [[likely]]
-			{
-				TValue value;
-				deserializeValue(stream, &value, options);
-				append(container, &value, index);
-				index++;
-			}
-			else [[unlikely]]
-			{
-				deserializeValue(stream, static_cast<TValue*>(nullptr), options);
-			}
+					if (container) [[likely]]
+					{
+						TValue value;
+						deserializeValue(stream, &value, options);
+						append(container, &value, index);
+						index++;
+					}
+					else [[unlikely]]
+					{
+						deserializeValue(stream, static_cast<TValue*>(nullptr), options);
+					}
 		}
 	}
 
@@ -621,53 +622,53 @@ namespace JSON
 		{
 			it = initIt(container);
 		}
-		while (true)
-		{
-			JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-			if (codePoint == EOF) [[unlikely]]
+			while (true)
 			{
-				throw std::runtime_error("json_deserialize_array_truncated");
-			}
-			if (!first) [[likely]]
-			{
-				if (codePoint == ']') [[unlikely]]
-				{
-					return;
-				}
-				if (codePoint != ',') [[unlikely]]
-				{
-					throw std::runtime_error("json_deserialize_array_invalid(,)");
-				}
-			}
-			else [[unlikely]]
-			{
-				if (codePoint != '[') [[unlikely]]
-				{
-					throw std::runtime_error("json_deserialize_array_invalid([)");
-				}
-				int bytesCount = JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+				JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
 				if (codePoint == EOF) [[unlikely]]
 				{
 					throw std::runtime_error("json_deserialize_array_truncated");
 				}
-				if (codePoint == ']') [[unlikely]]
-				{
-					return;
-				}
-				JSON_UNGET(stream, bytesCount);
-				first = false;
+					if (!first) [[likely]]
+					{
+						if (codePoint == ']') [[unlikely]]
+						{
+							return;
+						}
+							if (codePoint != ',') [[unlikely]]
+							{
+								throw std::runtime_error("json_deserialize_array_invalid(,)");
+							}
+					}
+					else [[unlikely]]
+					{
+						if (codePoint != '[') [[unlikely]]
+						{
+							throw std::runtime_error("json_deserialize_array_invalid([)");
+						}
+						int bytesCount = JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+						if (codePoint == EOF) [[unlikely]]
+						{
+							throw std::runtime_error("json_deserialize_array_truncated");
+						}
+							if (codePoint == ']') [[unlikely]]
+							{
+								return;
+							}
+						JSON_UNGET(stream, bytesCount);
+						first = false;
+					}
+						if (container) [[likely]]
+						{
+							TValue value;
+							deserializeValue(stream, &value, options);
+							append(container, &value, it);
+						}
+						else [[unlikely]]
+						{
+							deserializeValue(stream, static_cast<TValue*>(nullptr), options);
+						}
 			}
-			if (container) [[likely]]
-			{
-				TValue value;
-				deserializeValue(stream, &value, options);
-				append(container, &value, it);
-			}
-			else [[unlikely]]
-			{
-				deserializeValue(stream, static_cast<TValue*>(nullptr), options);
-			}
-		}
 	}
 
 	template<class TContainer, class TKey, class TValue>
@@ -682,35 +683,35 @@ namespace JSON
 			{
 				throw std::runtime_error("json_deserialize_map_truncated");
 			}
-			if (!first) [[likely]]
-			{
-				if (codePoint == '}') [[unlikely]]
+				if (!first) [[likely]]
 				{
-					return;
+					if (codePoint == '}') [[unlikely]]
+					{
+						return;
+					}
+						if (codePoint != ',') [[unlikely]]
+						{
+							throw std::runtime_error("json_deserialize_map_invalid(,)");
+						}
 				}
-				if (codePoint != ',') [[unlikely]]
+				else [[unlikely]]
 				{
-					throw std::runtime_error("json_deserialize_map_invalid(,)");
+					if (codePoint != '{') [[unlikely]]
+					{
+						throw std::runtime_error("json_deserialize_map_invalid({)");
+					}
+					int bytesCount = JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+					if (codePoint == EOF) [[unlikely]]
+					{
+						throw std::runtime_error("json_deserialize_map_truncated");
+					}
+						if (codePoint == '}') [[unlikely]]
+						{
+							return;
+						}
+					JSON_UNGET(stream, bytesCount);
+					first = false;
 				}
-			}
-			else [[unlikely]]
-			{
-				if (codePoint != '{') [[unlikely]]
-				{
-					throw std::runtime_error("json_deserialize_map_invalid({)");
-				}
-				int bytesCount = JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-				if (codePoint == EOF) [[unlikely]]
-				{
-					throw std::runtime_error("json_deserialize_map_truncated");
-				}
-				if (codePoint == '}') [[unlikely]]
-				{
-					return;
-				}
-				JSON_UNGET(stream, bytesCount);
-				first = false;
-			}
 			std::string field;
 			if (map) [[likely]]
 			{
@@ -725,23 +726,23 @@ namespace JSON
 			{
 				throw std::runtime_error("json_deserialize_map_truncated");
 			}
-			if (codePoint != ':') [[unlikely]]
-			{
-				throw std::runtime_error("json_deserialize_map_invalid(:)");
-			}
-			if (map) [[likely]]
-			{
-				TKey key;
-				std::istringstream stream2(field);
-				stream2 >> key;
-				TValue value;
-				deserializeValue(stream, &value, options);
-				map->insert({ key , value });
-			}
-			else [[unlikely]]
-			{
-				deserializeValue(stream, (TValue*)nullptr, options);
-			}
+				if (codePoint != ':') [[unlikely]]
+				{
+					throw std::runtime_error("json_deserialize_map_invalid(:)");
+				}
+					if (map) [[likely]]
+					{
+						TKey key;
+						std::istringstream stream2(field);
+						stream2 >> key;
+						TValue value;
+						deserializeValue(stream, &value, options);
+						map->insert({ key , value });
+					}
+					else [[unlikely]]
+					{
+						deserializeValue(stream, (TValue*)nullptr, options);
+					}
 		}
 	}
 

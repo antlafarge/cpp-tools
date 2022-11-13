@@ -264,18 +264,18 @@ namespace JSON
 			encoding = JSON_DEFAULT_ENCODING;
 		}
 
-		if (encoding & Encoding::UTF8) [[likely]]
-		{
-			return codePointToUtf8(codePoint);
-		}
-		else if (encoding & Encoding::UTF16) [[unlikely]]
-		{
-			return codePointToUtf16(codePoint, encoding);
-		}
-		else if (encoding & Encoding::UTF32) [[unlikely]]
-		{
-			return codePointToUtf32(codePoint, encoding);
-		}
+			if (encoding & Encoding::UTF8) [[likely]]
+			{
+				return codePointToUtf8(codePoint);
+			}
+			else if (encoding & Encoding::UTF16) [[unlikely]]
+			{
+				return codePointToUtf16(codePoint, encoding);
+			}
+			else if (encoding & Encoding::UTF32) [[unlikely]]
+			{
+				return codePointToUtf32(codePoint, encoding);
+			}
 		return codePoint;
 	}
 
@@ -286,18 +286,18 @@ namespace JSON
 			encoding = JSON_DEFAULT_ENCODING;
 		}
 
-		if (encoding & Encoding::UTF8) [[likely]]
-		{
-			return utf8ToCodePoint(unicode);
-		}
-		else if (encoding & Encoding::UTF16) [[unlikely]]
-		{
-			return utf16ToCodePoint(unicode, encoding);
-		}
-		else if (encoding & Encoding::UTF32) [[unlikely]]
-		{
-			return utf32ToCodePoint(unicode, encoding);
-		}
+			if (encoding & Encoding::UTF8) [[likely]]
+			{
+				return utf8ToCodePoint(unicode);
+			}
+			else if (encoding & Encoding::UTF16) [[unlikely]]
+			{
+				return utf16ToCodePoint(unicode, encoding);
+			}
+			else if (encoding & Encoding::UTF32) [[unlikely]]
+			{
+				return utf32ToCodePoint(unicode, encoding);
+			}
 		return unicode;
 	}
 

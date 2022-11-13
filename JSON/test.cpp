@@ -170,7 +170,8 @@ void test(const std::string& title, const TValue& value1)
 	TValue value2;
 	JSON::deserialize(json, value2);
 	bool passed = (value1 == value2);
-	std::cout << (passed ? "PASSED" : "FAILED") << std::endl << std::endl;
+	std::cout << (passed ? "PASSED" : "FAILED") << std::endl
+		<< std::endl;
 	assert(passed);
 }
 
@@ -239,7 +240,8 @@ struct BasicData
 		return (b1 && b2 && b3 && b4 && b5 && b6 && b7 && b8 && b9 && b10 && b11 && b12 && b13 && b14);
 	}
 
-	JSON(
+	JSON
+	(
 		"boolean", boolean,
 		"int8", int8,
 		"int16", int16,
@@ -301,7 +303,8 @@ struct ContainerData
 		return (b1 && b2 && b3 && b4 && b5 && b6 && b7 && b8 && b9 && b10 && b11 && b12 && b13 && b14 && b15 && b16 && b17 && b18);
 	}
 
-	JSON(
+	JSON
+	(
 		"null", null,
 		"notNull", notNull,
 		"array", array,
@@ -333,7 +336,8 @@ struct GlobalData
 		return (basicData == other.basicData && containerData == other.containerData);
 	}
 
-	JSON(
+	JSON
+	(
 		"basicData", basicData,
 		"containerData", containerData
 	);
@@ -454,9 +458,24 @@ struct TestJsonUtf16LE
 	JSON(JSON::Field("UTF16LE", (JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian)), myStr);
 };
 
+template<class T>
+void test(const std::string& sourceFileName, const std::string& targetFileName)
+{
+	std::cout << sourceFileName << " => " << targetFileName << std::endl;
+	T object;
+	JSON::deserialize(std::ifstream(sourceFileName), object);
+	JSON::serialize(std::ofstream(targetFileName), object);
+	bool valid = JSON::isValid(std::ifstream(targetFileName));
+	std::cout << (valid ? "PASSED" : "FAILED") << std::endl
+		<< std::endl;
+	assert(valid);
+}
+
 int main()
 {
 	// OPTIONAL
+
+	std::cout << "optional" << std::endl;
 
 	std::optional<int> opt;
 	assert(!opt.has_value());
@@ -490,7 +509,8 @@ int main()
 	assert(std::optional<int>(1337) >= std::optional<int>(1337));
 	assert(!(std::optional<int>(1337) >= std::optional<int>(1338)));
 
-	std::cout << "optional" << std::endl << "PASSED" << std::endl << std::endl;
+	std::cout << "PASSED" << std::endl
+		<< std::endl;
 
 	// BASIC TYPES
 
@@ -637,9 +657,11 @@ int main()
 
 	// VALUE
 
-	JSON::Value jsValue = JSON::Value(
-		std::vector<JSON::Value>{
-		JSON::Value(),
+	JSON::Value jsValue = JSON::Value
+	(
+		std::vector<JSON::Value>
+		{
+			JSON::Value(),
 			JSON::Value(false),
 			JSON::Value(true),
 			JSON::Value(INT8_MIN),
@@ -654,13 +676,15 @@ int main()
 			JSON::Value((double)PI),
 			JSON::Value(PI),
 			JSON::Value("STRING_2"),
-			JSON::Value(
-				std::unordered_map<std::string, JSON::Value>{
+			JSON::Value
+			(
+				std::unordered_map<std::string, JSON::Value>
+				{
 					{ "field1", JSON::Value{ "value1" } },
 					{ "field2", JSON::Value{ "value2" } }
+				}
+			)
 		}
-		)
-	}
 	);
 
 	test("JSON::Value", jsValue);
@@ -686,7 +710,8 @@ int main()
 	}
 	catch (const std::exception& ex)
 	{
-		std::cout << "Exception as expected : " << ex.what() << std::endl;
+		std::cout << "Exception as expected : " << ex.what() << std::endl
+			<< std::endl;
 	}
 
 	try
@@ -695,7 +720,8 @@ int main()
 	}
 	catch (const std::exception& ex)
 	{
-		std::cout << "Exception as expected : " << ex.what() << std::endl;
+		std::cout << "Exception as expected : " << ex.what() << std::endl
+			<< std::endl;
 	}
 
 	{
@@ -820,27 +846,16 @@ int main()
 	}
 
 	// JSON::Value testJsonUtf8(JSON::Encoding::UTF8);
-	TestJsonUtf8 testJsonUtf8;
-	JSON::deserialize(std::ifstream("UTF8.json"), testJsonUtf8);
-	JSON::serialize(std::ofstream("UTF8_2.json"), testJsonUtf8);
+	test<TestJsonUtf8>("UTF8.json", "UTF8_2.json");
 
 	// JSON::Value testJsonUtf8Bom(JSON::Encoding::UTF8);
-	TestJsonUtf8bom testJsonUtf8Bom;
-	JSON::deserialize(std::ifstream("UTF8BOM.json"), testJsonUtf8Bom);
-	JSON::serialize(std::ofstream("UTF8BOM_2.json"), testJsonUtf8Bom);
+	test<TestJsonUtf8bom>("UTF8BOM.json", "UTF8BOM_2.json");
 
 	// JSON::Value testJsonUtf16Be(JSON::Encoding::UTF16 | JSON::Encoding::BigEndian);
-	TestJsonUtf16BE testJsonUtf16Be;
-	JSON::deserialize(std::ifstream("UTF16BE.json"), testJsonUtf16Be);
-	JSON::serialize(std::ofstream("UTF16BE_2.json"), testJsonUtf16Be);
+	test<TestJsonUtf16BE>("UTF16BE.json", "UTF16BE_2.json");
 
 	// JSON::Value testJsonUtf16Le(JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian);
-	TestJsonUtf16LE testJsonUtf16Le;
-	JSON::deserialize(std::ifstream("UTF16LE.json"), testJsonUtf16Le);
-	JSON::serialize(std::ofstream("UTF16LE_2.json"), testJsonUtf16Le);
-
-	bool valid = JSON::isValid(std::ifstream("UTF8.json"));
-	std::cout << "valid=" << valid << std::endl;
+	test<TestJsonUtf16LE>("UTF16LE.json", "UTF16LE_2.json");
 
 	std::cout << "ALL TESTS PASSED" << std::endl;
 
