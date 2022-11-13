@@ -5,6 +5,12 @@
 #include <cstring>
 #include <stdexcept>
 
+#if defined(_MSC_VER)
+#   define GUID_SSCANF(...) sscanf_s(__VA_ARGS__)
+#else
+#   define GUID_SSCANF(...) sscanf(__VA_ARGS__)
+#endif
+
 GUID::GUID(const std::string& guidStr)
 {
     (*this) = toGUID(guidStr);
@@ -96,26 +102,26 @@ GUID GUID::toGUID(const std::string& guidStr)
     }
     else if (guidSize == 32)
     {
-        scanRet = sscanf(data, "%08X%04hX%04hX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+        scanRet = GUID_SSCANF(data, "%08X%04hX%04hX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
     }
     else if (guidSize == 36)
     {
-        scanRet = sscanf(data, "%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+        scanRet = GUID_SSCANF(data, "%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
     }
     else if (guidSize == 38)
     {
         if (data[0] == '{')
         {
-            scanRet = sscanf(data, "{%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+            scanRet = GUID_SSCANF(data, "{%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
         }
         else
         {
-            scanRet = sscanf(data, "(%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX)", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+            scanRet = GUID_SSCANF(data, "(%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX)", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
         }
     }
     else if (guidSize == 68)
     {
-        scanRet = sscanf(data, "{0x%08X,0x%04hX,0x%04hX,{0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX}}", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+        scanRet = GUID_SSCANF(data, "{0x%08X,0x%04hX,0x%04hX,{0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX}}", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
     }
 
     if (scanRet != 11)
