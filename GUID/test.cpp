@@ -16,13 +16,24 @@ int main()
     std::cout << "encode=" << guidB64 << std::endl;
     std::string guidN = GUID(guidB64).toString(GuidFormat::N);
     std::cout << "decode=" << guidN << std::endl;
-    std::cout << (guidN == guidStr1 ? "PASSED" : "FAILED") << std::endl << std::endl;
+    std::cout << (guidN == guidStr1 ? "PASSED" : "FAILED") << std::endl
+              << std::endl;
 
     std::cout << GUID(guidStr1).toString(GuidFormat::N) << std::endl;
     std::cout << GUID(guidStr2).toString(GuidFormat::D) << std::endl;
     std::cout << GUID(guidStr3).toString(GuidFormat::B) << std::endl;
     std::cout << GUID(guidStr4).toString(GuidFormat::P) << std::endl;
-    std::cout << GUID(guidStr5).toString(GuidFormat::X) << std::endl;
+    std::cout << GUID(guidStr5).toString(GuidFormat::X) << std::endl
+              << std::endl;
+
+    GUID generated = GUID::generate();
+    std::cout << "Generated:" << std::endl
+              << generated.toString(GuidFormat::Base64) << std::endl
+              << generated.toString(GuidFormat::N) << std::endl
+              << generated.toString(GuidFormat::D) << std::endl
+              << generated.toString(GuidFormat::B) << std::endl
+              << generated.toString(GuidFormat::P) << std::endl
+              << generated.toString(GuidFormat::X) << std::endl;
 
     return 0;
 }

@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <stdexcept>
+#include <time.h>
 
 #if defined(_MSC_VER)
 #   define GUID_SSCANF(...) sscanf_s(__VA_ARGS__)
@@ -134,13 +135,20 @@ GUID GUID::toGUID(const std::string& guidStr)
 
 GUID GUID::generate()
 {
-    GUID guid;
-    for (int i = 0; i < 8; i++)
+    static int randBits = 0;
+    if (randBits == 0)
     {
-        guid._g1 <<= 8;
-        guid._g1 |= std::rand();
-        guid._g2 <<= 8;
-        guid._g2 |= std::rand();
+        srand(time(NULL));
+        for (int r = RAND_MAX; r > 0; r >>= 1) randBits++;
+    }
+
+    GUID guid;
+    for (int i = 0; i < 64; i += randBits)
+    {
+        guid._g1 <<= randBits;
+        guid._g1 |= rand();
+        guid._g2 <<= randBits;
+        guid._g2 |= rand();
     }
     return guid;
 }
