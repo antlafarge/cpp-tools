@@ -78,7 +78,7 @@
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>5051;4068</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../Base64/src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;../Base64/src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -95,7 +95,7 @@
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>5051;4068</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../Base64/src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;../Base64/src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -112,7 +112,7 @@
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>5051;4068</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../Base64/src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;../Base64/src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,7 +129,7 @@
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>5051;4068</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../Base64/src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;../Base64/src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,13 +141,16 @@
   <ItemGroup>
     <ClCompile Include="..\Base64\src\Base64.cpp" />
     <ClCompile Include="..\Base64\src\Base64.helpers.cpp" />
-    <ClCompile Include="GUID.cpp" />
-    <ClCompile Include="test.cpp" />
+    <ClCompile Include="src\GUID.cpp" />
+    <ClCompile Include="test\test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Base64\src\Base64.h" />
     <ClInclude Include="..\Base64\src\Base64.helpers.h" />
-    <ClInclude Include="GUID.h" />
+    <ClInclude Include="src\GUID.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

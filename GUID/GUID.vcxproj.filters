@@ -15,28 +15,33 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GUID.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="test.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Base64\src\Base64.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Base64\src\Base64.helpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\GUID.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test\test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GUID.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Base64\src\Base64.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Base64\src\Base64.helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\GUID.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

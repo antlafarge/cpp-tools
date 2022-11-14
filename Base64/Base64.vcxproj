@@ -152,7 +152,7 @@
   <ItemGroup>
     <ClCompile Include="src\Base64.helpers.cpp" />
     <ClCompile Include="src\Base64.cpp" />
-    <ClCompile Include="test.cpp" />
+    <ClCompile Include="test\test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Base64.helpers.h" />
