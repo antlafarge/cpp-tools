@@ -5,8 +5,9 @@ Set of cpp tools
 ## Sub-Projects
 
 - [Base64](https://github.com/antlafarge/cpp-tools/tree/main/Base64)
-- [JSON](https://github.com/antlafarge/cpp-tools/tree/main/JSON)
 - [ConcurrentResource](https://github.com/antlafarge/cpp-tools/tree/main/Concurrent)
+- [GUID](https://github.com/antlafarge/cpp-tools/tree/main/GUID)
+- [JSON](https://github.com/antlafarge/cpp-tools/tree/main/JSON)
 
 ## Visual studio code C++ installation
 
