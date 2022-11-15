@@ -18,6 +18,21 @@
 #pragma GCC diagnostic ignored "-Wattributes"
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 
+#define BASE64_COMPUTE_DECODED_SIZE(srcSize, srcPtr) \
+if (srcPtr != nullptr && srcSize >= 2) [[likely]] \
+{ \
+	const uint8_t* srcPtr2 = static_cast<const uint8_t*>(srcPtr); \
+	if (srcPtr2[srcSize - 2] == '=') \
+	{ \
+		srcSize -= 2; \
+	} \
+	else if (srcPtr2[srcSize - 1] == '=') \
+	{ \
+		srcSize--; \
+	} \
+} \
+uint64_t dstSize2 = ((srcSize * 3) / 4);
+
 namespace Base64
 {
 	namespace
@@ -78,24 +93,24 @@ namespace Base64
 		for (; srcPtr2 < srcPtr2End; srcPtr2 += 3)
 		{
 			const uint32_t data = BASE64_SWAP_BYTES(*reinterpret_cast<const uint32_t*>(srcPtr2));
-			dstPtr2[dstIndex++] = encodingTable[(data >> 26) & 0x3f]; // [--AAAAAA]
-			dstPtr2[dstIndex++] = encodingTable[(data >> 20) & 0x3f]; // [--BBBBBB]
-			dstPtr2[dstIndex++] = encodingTable[(data >> 14) & 0x3f]; // [--CCCCCC]
-			dstPtr2[dstIndex++] = encodingTable[(data >> 8) & 0x3f]; //  [--DDDDDD]
+			dstPtr2[dstIndex++] = encodingTable[(data >> 26) & 0x3f]; // [00AAAAAA]
+			dstPtr2[dstIndex++] = encodingTable[(data >> 20) & 0x3f]; // [00BBBBBB]
+			dstPtr2[dstIndex++] = encodingTable[(data >> 14) & 0x3f]; // [00CCCCCC]
+			dstPtr2[dstIndex++] = encodingTable[(data >> 8) & 0x3f]; //  [00DDDDDD]
 		}
 
 		if (lastBytesCount == 2)
 		{
 			const uint32_t data = BASE64_SWAP_BYTES(*reinterpret_cast<const uint32_t*>(srcPtr2));
-			dstPtr2[dstIndex++] = encodingTable[(data >> 26) & 0x3f]; // [--AAAAAA]
-			dstPtr2[dstIndex++] = encodingTable[(data >> 20) & 0x3f]; // [--BBBBBB]
-			dstPtr2[dstIndex++] = encodingTable[(data >> 14) & 0x3f]; // [--CCCCCC]
+			dstPtr2[dstIndex++] = encodingTable[(data >> 26) & 0x3f]; // [00AAAAAA]
+			dstPtr2[dstIndex++] = encodingTable[(data >> 20) & 0x3f]; // [00BBBBBB]
+			dstPtr2[dstIndex++] = encodingTable[(data >> 14) & 0x3c]; // [00CCCC00]
 		}
 		else if (lastBytesCount == 1)
 		{
 			const uint32_t data = BASE64_SWAP_BYTES(*reinterpret_cast<const uint32_t*>(srcPtr2));
-			dstPtr2[dstIndex++] = encodingTable[(data >> 26) & 0x3f]; // [--AAAAAA]
-			dstPtr2[dstIndex++] = encodingTable[(data >> 20) & 0x3f]; // [--BBBBBB]
+			dstPtr2[dstIndex++] = encodingTable[(data >> 26) & 0x3f]; // [00AAAAAA]
+			dstPtr2[dstIndex++] = encodingTable[(data >> 20) & 0x30]; // [00BB0000]
 		}
 
 		while (dstIndex % 4 != 0)
@@ -108,30 +123,19 @@ namespace Base64
 
 	uint64_t computeDecodedSize(uint64_t srcSize, const void* srcPtr)
 	{
-		if (srcPtr != nullptr && srcSize >= 2) [[likely]]
-		{
-			const uint8_t* srcPtr2 = static_cast<const uint8_t*>(srcPtr);
-			if (srcPtr2[srcSize - 2] == '=')
-			{
-				srcSize -= 2;
-			}
-			else if (srcPtr2[srcSize - 1] == '=')
-			{
-				srcSize--;
-			}
-		}
-
-		return ((srcSize * 3) / 4);
+		BASE64_COMPUTE_DECODED_SIZE(srcSize, srcPtr);
+		return dstSize2;
 	}
 
 	Result decode(const void* srcPtr, uint64_t srcSize, void* dstPtr, uint64_t& dstSize)
 	{
-		if ((srcSize % 4) == 1) [[unlikely]]
+		uint64_t srcSizeMod4 = srcSize % 4;
+		if (srcSizeMod4 == 1) [[unlikely]]
 		{
 			return Result::InvalidSourceBufferSize;
 		}
 
-		uint64_t dstSize2 = computeDecodedSize(srcSize, srcPtr);
+		BASE64_COMPUTE_DECODED_SIZE(srcSize, srcPtr);
 		if (dstSize < dstSize2) [[unlikely]]
 		{
 			return Result::InvalidDestinationBufferSize;
@@ -139,7 +143,7 @@ namespace Base64
 		dstSize = dstSize2;
 
 		const uint8_t* srcPtr2 = static_cast<const uint8_t*>(srcPtr);
-		uint8_t* dstPtr2 = reinterpret_cast<uint8_t*>(dstPtr);
+		uint8_t* dstPtr2 = static_cast<uint8_t*>(dstPtr);
 
 		for (; srcSize >= 4; srcSize -= 4)
 		{
@@ -151,7 +155,7 @@ namespace Base64
 				return Result::InvalidCharacter;
 			}
 
-			// [--BBbbbb]
+			// [--bbBBBB]
 			uint8_t B = decodingTable[srcPtr2[1]];
 
 			if (B == 0xFF) [[unlikely]]
@@ -159,44 +163,32 @@ namespace Base64
 				return Result::InvalidCharacter;
 			}
 
-			(*(dstPtr2++)) = ((A << 2) | (B >> 4)); // [AAAAAABB]
+			(*(dstPtr2++)) = ((A << 2) | (B >> 4)); // [AAAAAAbb]
 
 			// [--ccccCC]
 			uint8_t C = decodingTable[srcPtr2[2]];
 
 			if (C == 0xFF) [[unlikely]]
 			{
-				if (srcSize <= 4 && srcPtr2[2] == '=' && srcPtr2[3] == '=') [[likely]]
-				{
-					return Result::Success;
-				}
-				else [[unlikely]]
-				{
-					return Result::InvalidCharacter;
-				}
+				return Result::InvalidCharacter;
 			}
 
-			(*(dstPtr2++)) = ((B << 4) | (C >> 2)); // [bbbbcccc]
+			(*(dstPtr2++)) = ((B << 4) | (C >> 2)); // [BBBBcccc]
 
-			// [--DDDDDD]
+			// [--dddddd]
 			uint8_t D = decodingTable[srcPtr2[3]];
 
 			if (D == 0xFF) [[unlikely]]
 			{
-				if (srcSize <= 4 && srcPtr2[3] == '=') [[likely]]
-				{
-					return Result::Success;
-				}
-				else [[unlikely]]
-				{
-					return Result::InvalidCharacter;
-				}
+				return Result::InvalidCharacter;
 			}
 
-			(*(dstPtr2++)) = ((C << 6) | D); // [CCDDDDDD]
+			(*(dstPtr2++)) = ((C << 6) | D); // [CCdddddd]
 
 			srcPtr2 += 4;
 		}
+
+		Result result = (srcSizeMod4 == 0 ? Result::Success : Result::MissingPaddingCharacters);
 
 		if (srcSize >= 2)
 		{
@@ -208,7 +200,7 @@ namespace Base64
 				return Result::InvalidCharacter;
 			}
 
-			// [--BBbbbb]
+			// [--bbBBBB]
 			uint8_t B = decodingTable[srcPtr2[1]];
 
 			if (B == 0xFF) [[unlikely]]
@@ -216,29 +208,37 @@ namespace Base64
 				return Result::InvalidCharacter;
 			}
 
-			(*(dstPtr2++)) = ((A << 2) | (B >> 4)); // [AAAAAABB]
+			(*(dstPtr2++)) = ((A << 2) | (B >> 4)); // [AAAAAAbb]
 
 			if (srcSize >= 3)
 			{
-				// [--cccc--]
+				// [--ccccCC]
 				uint8_t C = decodingTable[srcPtr2[2]];
 
-				if (C == 0xFF) [[unlikely]]
+				if (C != 0xFF) [[likely]]
 				{
-					if (srcPtr2[2] == '=') [[likely]]
+					(*(dstPtr2++)) = ((B << 4) | (C >> 2)); // [BBBBcccc]
+
+					if (C & 0x03) [[unlikely]]
 					{
-						return Result::MissingPadding;
+						result = static_cast<Result>(static_cast<uint8_t>(result) | static_cast<uint8_t>(Result::InvalidPaddingBits));
 					}
-					else [[unlikely]]
-					{
-						return Result::InvalidCharacter;
-					}
+
+					return result;
 				}
 
-				(*(dstPtr2++)) = ((B << 4) | (C >> 2)); // [bbbbcccc]
+				if (srcPtr2[2] != '=') [[likely]]
+				{
+					return Result::InvalidCharacter;
+				}
 			}
 
-			return Result::MissingPadding;
+			if (B & 0x0f) [[unlikely]]
+			{
+				result = static_cast<Result>(static_cast<uint8_t>(result) | static_cast<uint8_t>(Result::InvalidPaddingBits));
+			}
+
+			return result;
 		}
 
 		return Result::Success;

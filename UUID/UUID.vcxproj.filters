@@ -21,7 +21,7 @@
     <ClCompile Include="..\Base64\src\Base64.helpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\GUID.cpp">
+    <ClCompile Include="src\UUID.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="test\test.cpp">
@@ -35,7 +35,7 @@
     <ClInclude Include="..\Base64\src\Base64.helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\GUID.h">
+    <ClInclude Include="src\UUID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

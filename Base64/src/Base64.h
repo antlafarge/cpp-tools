@@ -17,8 +17,15 @@ namespace Base64
 		/// @brief Success
 		Success = 0x00, // 0
 
-		/// @brief Warning indicating missing base64 padding characters
-		MissingPadding = 0x01, // 1
+		/// @brief Warning indicating missing base64 padding characters '='
+		MissingPaddingCharacters = 0x01, // 1
+
+		/// @brief Warning indicating the padding bits were not set to 0 by the base64 encoder
+		/// There may be a bug in the base64 encoder used
+		InvalidPaddingBits = 0x02, // 2
+
+		/// @brief Warning cf. MissingPaddingCharacters and cf. InvalidPaddingBits
+		MissingPaddingCharactersAndInvalidPaddingBits = 0x03, // 3
 
 		/// @brief Destination buffer size too small
 		/// Allocate greater destination buffer

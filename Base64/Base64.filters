@@ -18,7 +18,7 @@
     <ClCompile Include="test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GUID.cpp">
+    <ClCompile Include="UUID.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Base64.cpp">
@@ -26,7 +26,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GUID.h">
+    <ClInclude Include="UUID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Base64.h">

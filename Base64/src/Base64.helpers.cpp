@@ -2,6 +2,10 @@
 
 #include <stdexcept>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+
 namespace Base64
 {
     std::string encode(const void* srcPtr, uint64_t srcSize)
@@ -53,3 +57,5 @@ namespace Base64
         return decode(src.data(), src.size());
     }
 }
+
+#pragma GCC diagnostic pop

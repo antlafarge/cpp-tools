@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{1f27117f-34ee-4c0e-a7e4-3efc743d8d88}</ProjectGuid>
-    <RootNamespace>GUID</RootNamespace>
+    <RootNamespace>UUID</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -141,13 +141,13 @@
   <ItemGroup>
     <ClCompile Include="..\Base64\src\Base64.cpp" />
     <ClCompile Include="..\Base64\src\Base64.helpers.cpp" />
-    <ClCompile Include="src\GUID.cpp" />
+    <ClCompile Include="src\UUID.cpp" />
     <ClCompile Include="test\test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Base64\src\Base64.h" />
     <ClInclude Include="..\Base64\src\Base64.helpers.h" />
-    <ClInclude Include="src\GUID.h" />
+    <ClInclude Include="src\UUID.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />

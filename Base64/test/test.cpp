@@ -14,41 +14,55 @@ void testBase64(const std::string& src)
 {
 	std::cout << "Source = \"" << src << '"' << std::endl;
 
-	auto encoded = Base64::encode(src);
+	std::vector<uint8_t> dstVector1(Base64::computeEncodedSize(src.size()));
+	uint64_t dstVectorSize1 = dstVector1.size();
 
-	std::cout << "Encode = \"" << encoded << '"' << std::endl;
+	Base64::Result result = Base64::encode(src.data(), src.size(), dstVector1.data(), dstVectorSize1);
 
-	try
+	if (result != Base64::Result::Success)
 	{
-		auto decodedVector = Base64::decode(encoded);
-		auto decoded = std::string((const char*)decodedVector.data(), decodedVector.size());
-		
-		bool passed = (src == decoded);
+		std::cout << "FAILED" << std::endl
+			<< std::endl;
 
-		if (passed)
-		{
-			std::cout << "PASSED" << std::endl
-				<< std::endl;
-		}
-		else
-		{
-			std::cout << "Decode = \"" << decoded << '"' << std::endl;
-			std::cout << "FAILED" << std::endl
-				<< std::endl;
-		}
-		
-		assert(passed);
-	}
-	catch(const std::exception& e)
-	{
-		std::cout << "Error = " << e.what() << std::endl
-			<< "FAILED" << std::endl;
-		
 		assert(false);
 	}
+
+	std::string encoded((const char*)dstVector1.data(), dstVector1.size());
+	std::cout << "Encode = \"" << encoded << '"' << std::endl;
+
+	std::vector<uint8_t> dstVector2(Base64::computeDecodedSize(encoded.size(), encoded.data()));
+	uint64_t dstVectorSize2 = dstVector2.size();
+
+	result = Base64::decode(encoded.data(), encoded.size(), dstVector2.data(), dstVectorSize2);
+
+	if (result != Base64::Result::Success)
+	{
+		std::cout << "FAILED" << std::endl
+			<< std::endl;
+
+		assert(false);
+	}
+
+	auto decoded = std::string((const char*)dstVector2.data(), dstVector2.size());
+		
+	bool passed = (src == decoded);
+
+	if (passed)
+	{
+		std::cout << "PASSED" << std::endl
+			<< std::endl;
+	}
+	else
+	{
+		std::cout << "Decode = \"" << decoded << '"' << std::endl;
+		std::cout << "FAILED" << std::endl
+			<< std::endl;
+	}
+		
+	assert(passed);
 }
 
-void testBase64DecodeNoPadding(const std::string& src, const std::string& dstExpected)
+void testBase64Decode(const std::string& src, const std::string& dstExpected, Base64::Result resultExpected)
 {
 	std::cout << "Source = " << src << std::endl;
 
@@ -64,7 +78,7 @@ void testBase64DecodeNoPadding(const std::string& src, const std::string& dstExp
 
 		if (dst == dstExpected)
 		{
-			if (result == Base64::Result::MissingPadding)
+			if (result == resultExpected)
 			{
 				std::cout << "PASSED" << std::endl
 					<< std::endl;
@@ -123,17 +137,73 @@ int main()
 	testBase64("ABCDEFGHIJKLMNOPQRSTUV");
 	testBase64("ABCDEFGHIJKLMNOPQRSTUVW");
 	testBase64("ABCDEFGHIJKLMNOPQRSTUVWX");
+	testBase64("ABCDEFGHIJKLMNOPQRSTUVWXY");
+	testBase64("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
-	testBase64DecodeNoPadding("QQ", "A");
-	testBase64DecodeNoPadding("QQ=", "A");
-	testBase64DecodeNoPadding("QUI", "AB");
+	// Check warnings
+
+	testBase64Decode("QQ", "A", Base64::Result::MissingPaddingCharacters);
+	testBase64Decode("QQ=", "A", Base64::Result::MissingPaddingCharacters);
+	testBase64Decode("QUI", "AB", Base64::Result::MissingPaddingCharacters);
+
+	testBase64Decode("QR==", "A", Base64::Result::InvalidPaddingBits);
+	testBase64Decode("QS==", "A", Base64::Result::InvalidPaddingBits);
+	testBase64Decode("QU==", "A", Base64::Result::InvalidPaddingBits);
+	testBase64Decode("QY==", "A", Base64::Result::InvalidPaddingBits);
+
+	testBase64Decode("QUJ=", "AB", Base64::Result::InvalidPaddingBits);
+	testBase64Decode("QUK=", "AB", Base64::Result::InvalidPaddingBits);
+
+	testBase64Decode("QR", "A", Base64::Result::MissingPaddingCharactersAndInvalidPaddingBits);
+	testBase64Decode("QS", "A", Base64::Result::MissingPaddingCharactersAndInvalidPaddingBits);
+	testBase64Decode("QU=", "A", Base64::Result::MissingPaddingCharactersAndInvalidPaddingBits);
+	testBase64Decode("QY=", "A", Base64::Result::MissingPaddingCharactersAndInvalidPaddingBits);
+
+	testBase64Decode("QUJ", "AB", Base64::Result::MissingPaddingCharactersAndInvalidPaddingBits);
+	testBase64Decode("QUK", "AB", Base64::Result::MissingPaddingCharactersAndInvalidPaddingBits);
+
+	// Check exception handling
+
+	std::cout << "Warning (no exception expected)" << std::endl;
+	try
+	{
+		Base64::decode("QQ");
+
+		std::cout << "PASSED" << std::endl
+			<< std::endl;
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << "FAILED" << std::endl
+			<< std::endl;
+
+		assert(false);
+	}
+
+	std::cout << "Error (exception expected)" << std::endl;
+	try
+	{
+		Base64::decode("A");
+
+		std::cout << "FAILED" << std::endl
+			<< std::endl;
+
+		assert(false);
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << "PASSED" << std::endl
+			<< std::endl;
+	}
+
+	return 0;
 
 	std::string source = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam nibh. Mauris ac mauris sed pede pellentesque fermentum. Maecenas adipiscing ante non diam sodales hendrerit. Ut velit mauris, egestas sed, gravida nec, ornare ut, mi.Aenean ut orci vel massa suscipit pulvinar.Nulla sollicitudin.Fusce varius, ligula non tempus aliquam, nunc turpis ullamcorper nibh, in tempus sapien eros vitae ligula.Pellentesque rhoncus nunc et augue.Integer id felis.Curabitur aliquet pellentesque diam.Integer quis metus vitae elit lobortis egestas.Lorem ipsum dolor sit amet, consectetuer adipiscing elit.Morbi vel erat non mauris convallis vehicula.Nulla et sapien.Integer tortor tellus, aliquam faucibus, convallis id, congue eu, quam.Mauris ullamcorper felis vitae erat.Proin feugiat, augue non elementum posuere, metus purus iaculis lectus, et tristique ligula justo vitae magna. Aliquam convallis sollicitudin purus.Praesent aliquam, enim at fermentum mollis, ligula massa adipiscing nisl, ac euismod nibh nisl eu lectus.Fusce vulputate sem at sapien.Vivamus leo.Aliquam euismod libero eu enim.Nulla nec felis sed leo placerat imperdiet.Aenean suscipit nulla in justo.Suspendisse cursus rutrum augue.Nulla tincidunt tincidunt mi.Curabitur iaculis, lorem vel rhoncus faucibus, felis magna fermentum augue, et ultricies lacus lorem varius purus.Curabitur eu amet.";
 	testBase64(source);
 
 	// BENCHMARK
 
-	int nbTests = 1000;
+	int nbTests = 1'000;
 	double min;
 	std::string encoded = Base64::encode(source);
 	std::vector<uint8_t> dummyBuffer(encoded.size(), '\0');

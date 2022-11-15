@@ -158,24 +158,40 @@ catch (const std::exception& ex)
 }
 ```
 
+# Warning codes
+
+If you get a warning as a result, the data was successfully processed, but the result data might be invalid
+
+## 1 MissingPadding (0x01)
+
+    Missing base64 padding characters  
+    Warning indicating base64 string might be truncated
+
+## 2 InvalidPaddingBits (0x02)
+
+    Invalid padding bits  
+    Padding bits are not equal to 0  
+    Warning indicating base64 string might be truncated
+
+## 3 MissingPaddingCharactersAndInvalidPaddingBits (0x03)
+
+    Aggregation of MissingPadding and InvalidPaddingBits warnings  
+    cf. MissingPadding  
+    cf. InvalidPaddingBits
+
 # Error codes
 
-## 1 MissingPadding *(Warning)*
-
-    Warning indicating missing base64 padding characters  
-    This is not an error, this is a warning, decoding succeed
-
-## 32 InvalidDestinationBufferSize
+## 32 InvalidDestinationBufferSize (0x20)
 
     Destination buffer size too small  
     Allocate greater destination buffer
 
-## 96 InvalidSourceBufferSize
+## 96 InvalidSourceBufferSize (0x60)
 
     Invalid source buffer size  
     Base64 encoded data size must be a multiple of 4
 
-## 97 InvalidCharacter
+## 97 InvalidCharacter (0x61)
 
     Invalid base64 character
     Source data is not a valid base64 encoded string
