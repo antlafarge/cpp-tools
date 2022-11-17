@@ -3,6 +3,7 @@
 #include <string>
 
 /// @brief UUID class
+/// @note Use variant 1
 class UUID
 {
 public:
@@ -22,9 +23,9 @@ public:
     /// @brief Create new uninitialized UUID (set to 0)
     UUID() = default;
 
-    /// @brief Create from another
-    /// @param other Source UUID
-    UUID(const UUID& other) = default;
+    /// @brief Create from c-string
+    /// @param uuidStr Source c-string
+    UUID(const char* uuidStr);
 
     /// @brief Create from string
     /// @param uuidStr Source string
@@ -32,7 +33,11 @@ public:
 
     /// @brief Create from 128 bits pointer
     /// @param srcPtr Source pointer
-    UUID(const void* srcPtr);
+    UUID(const uint8_t* srcPtr, bool fromVariant2 = false);
+
+    /// @brief Create from another
+    /// @param other Source UUID
+    UUID(const UUID& other) = default;
 
     /// UUID destructor
     ~UUID() = default;
@@ -57,22 +62,23 @@ public:
     /// @return Formated string
     std::string toString(Format format = Format::D) const;
 
-    /// @brief Format to string
-    /// @param uuid UUID to format
-    /// @param format Format to use
-    /// @return Formated string
-    static std::string toString(const UUID& uuid, Format format = Format::D);
+    /// @brief Parse UUID from c-string
+    /// @param uuidStr Source c-string
+    /// @return Parsed UUID
+    UUID& fromString(const char* uuidStr);
 
     /// @brief Parse UUID from string
     /// @param uuidStr Source string
     /// @return Parsed UUID
-    static UUID toUUID(const std::string& uuidStr);
+    UUID& fromString(const std::string& uuidStr);
 
     /// @brief Generate a new UUID (version 4, fully randomized)
     /// @return Generated UUID
     static UUID generate();
 
 private:
+
+    UUID& fromString(const char* uuidPtr, std::size_t uuidSize);
 
     uint64_t _part1 = 0ULL;
     uint64_t _part2 = 0ULL;

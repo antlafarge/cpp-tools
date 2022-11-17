@@ -22,16 +22,41 @@
 #pragma GCC diagnostic ignored "-Wattributes"
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 
-UUID::UUID(const std::string& uuidStr)
+UUID::UUID(const char* uuidStr)
 {
-    (*this) = toUUID(uuidStr);
+    fromString(uuidStr);
 }
 
-UUID::UUID(const void* srcPtr)
+UUID::UUID(const std::string& uuidStr)
 {
-    const uint64_t* srcPtr2 = reinterpret_cast<const uint64_t*>(srcPtr);
-    _part1 = srcPtr2[0];
-    _part2 = srcPtr2[1];
+    fromString(uuidStr);
+}
+
+UUID::UUID(const uint8_t* srcPtr, bool fromVariant2)
+{
+    uint8_t* dstPtr = reinterpret_cast<uint8_t*>(&_part1);
+    if (!fromVariant2) [[likely]]
+    {
+        for (int i = 0; i < 16; i++)
+        {
+            dstPtr[i] = srcPtr[i];
+        }
+    }
+    else [[unlikely]]
+    {
+        dstPtr[0] = srcPtr[3];
+        dstPtr[1] = srcPtr[2];
+        dstPtr[2] = srcPtr[1];
+        dstPtr[3] = srcPtr[0];
+        dstPtr[4] = srcPtr[5];
+        dstPtr[5] = srcPtr[4];
+        dstPtr[6] = srcPtr[7];
+        dstPtr[7] = srcPtr[6];
+        for (int i = 8; i < 16; i++)
+        {
+            dstPtr[i] = srcPtr[i];
+        }
+    }
 }
 
 bool UUID::operator==(const UUID& right) const
@@ -46,16 +71,12 @@ bool UUID::operator!=(const UUID& right) const
 
 std::string UUID::toString(UUID::Format format) const
 {
-    return toString(*this, format);
-}
-
-std::string UUID::toString(const UUID& uuid, UUID::Format format)
-{
     if (format == UUID::Format::D) [[likely]]
     {
         const size_t size = 37;
         std::string output(size, 0);
-        snprintf(UUID_STRING_GET_DATA(output), size, "%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx", (uint32_t)(uuid._part1 >> 32), (uint16_t)(uuid._part1 >> 16), (uint16_t)(uuid._part1), (uint8_t)(uuid._part2 >> 56), (uint8_t)(uuid._part2 >> 48), (uint8_t)(uuid._part2 >> 40), (uint8_t)(uuid._part2 >> 32), (uint8_t)(uuid._part2 >> 24), (uint8_t)(uuid._part2 >> 16), (uint8_t)(uuid._part2 >> 8), (uint8_t)(uuid._part2));
+        const uint8_t* srcPtr = reinterpret_cast<const uint8_t*>(&_part1);
+        snprintf(UUID_STRING_GET_DATA(output), size, "%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx", srcPtr[0], srcPtr[1], srcPtr[2], srcPtr[3], srcPtr[4], srcPtr[5], srcPtr[6], srcPtr[7], srcPtr[8], srcPtr[9], srcPtr[10], srcPtr[11], srcPtr[12], srcPtr[13], srcPtr[14], srcPtr[15]);
         output.resize(size - 1);
         return output;
     }
@@ -63,7 +84,8 @@ std::string UUID::toString(const UUID& uuid, UUID::Format format)
     {
         const size_t size = 33;
         std::string output(size, 0);
-        snprintf(UUID_STRING_GET_DATA(output), size, "%08x%04hx%04hx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx", (uint32_t)(uuid._part1 >> 32), (uint16_t)(uuid._part1 >> 16), (uint16_t)(uuid._part1), (uint8_t)(uuid._part2 >> 56), (uint8_t)(uuid._part2 >> 48), (uint8_t)(uuid._part2 >> 40), (uint8_t)(uuid._part2 >> 32), (uint8_t)(uuid._part2 >> 24), (uint8_t)(uuid._part2 >> 16), (uint8_t)(uuid._part2 >> 8), (uint8_t)(uuid._part2));
+        const uint8_t* srcPtr = reinterpret_cast<const uint8_t*>(&_part1);
+        snprintf(UUID_STRING_GET_DATA(output), size, "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx", srcPtr[0], srcPtr[1], srcPtr[2], srcPtr[3], srcPtr[4], srcPtr[5], srcPtr[6], srcPtr[7], srcPtr[8], srcPtr[9], srcPtr[10], srcPtr[11], srcPtr[12], srcPtr[13], srcPtr[14], srcPtr[15]);
         output.resize(size - 1);
         return output;
     }
@@ -71,7 +93,8 @@ std::string UUID::toString(const UUID& uuid, UUID::Format format)
     {
         const size_t size = 39;
         std::string output(size, 0);
-        snprintf(UUID_STRING_GET_DATA(output), size, "{%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx}", (uint32_t)(uuid._part1 >> 32), (uint16_t)(uuid._part1 >> 16), (uint16_t)(uuid._part1), (uint8_t)(uuid._part2 >> 56), (uint8_t)(uuid._part2 >> 48), (uint8_t)(uuid._part2 >> 40), (uint8_t)(uuid._part2 >> 32), (uint8_t)(uuid._part2 >> 24), (uint8_t)(uuid._part2 >> 16), (uint8_t)(uuid._part2 >> 8), (uint8_t)(uuid._part2));
+        const uint8_t* srcPtr = reinterpret_cast<const uint8_t*>(&_part1);
+        snprintf(UUID_STRING_GET_DATA(output), size, "{%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx}", srcPtr[0], srcPtr[1], srcPtr[2], srcPtr[3], srcPtr[4], srcPtr[5], srcPtr[6], srcPtr[7], srcPtr[8], srcPtr[9], srcPtr[10], srcPtr[11], srcPtr[12], srcPtr[13], srcPtr[14], srcPtr[15]);
         output.resize(size - 1);
         return output;
     }
@@ -79,7 +102,8 @@ std::string UUID::toString(const UUID& uuid, UUID::Format format)
     {
         const size_t size = 39;
         std::string output(size, 0);
-        snprintf(UUID_STRING_GET_DATA(output), size, "(%08x-%04hx-%04hx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx)", (uint32_t)(uuid._part1 >> 32), (uint16_t)(uuid._part1 >> 16), (uint16_t)(uuid._part1), (uint8_t)(uuid._part2 >> 56), (uint8_t)(uuid._part2 >> 48), (uint8_t)(uuid._part2 >> 40), (uint8_t)(uuid._part2 >> 32), (uint8_t)(uuid._part2 >> 24), (uint8_t)(uuid._part2 >> 16), (uint8_t)(uuid._part2 >> 8), (uint8_t)(uuid._part2));
+        const uint8_t* srcPtr = reinterpret_cast<const uint8_t*>(&_part1);
+        snprintf(UUID_STRING_GET_DATA(output), size, "(%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx)", srcPtr[0], srcPtr[1], srcPtr[2], srcPtr[3], srcPtr[4], srcPtr[5], srcPtr[6], srcPtr[7], srcPtr[8], srcPtr[9], srcPtr[10], srcPtr[11], srcPtr[12], srcPtr[13], srcPtr[14], srcPtr[15]);
         output.resize(size - 1);
         return output;
     }
@@ -87,85 +111,85 @@ std::string UUID::toString(const UUID& uuid, UUID::Format format)
     {
         const size_t size = 69;
         std::string output(size, 0);
-        snprintf(UUID_STRING_GET_DATA(output), size, "{0x%08x,0x%04hx,0x%04hx,{0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx}}", (uint32_t)(uuid._part1 >> 32), (uint16_t)(uuid._part1 >> 16), (uint16_t)(uuid._part1), (uint8_t)(uuid._part2 >> 56), (uint8_t)(uuid._part2 >> 48), (uint8_t)(uuid._part2 >> 40), (uint8_t)(uuid._part2 >> 32), (uint8_t)(uuid._part2 >> 24), (uint8_t)(uuid._part2 >> 16), (uint8_t)(uuid._part2 >> 8), (uint8_t)(uuid._part2));
+        const uint8_t* srcPtr = reinterpret_cast<const uint8_t*>(&_part1);
+        snprintf(UUID_STRING_GET_DATA(output), size, "{0x%02hhx%02hhx%02hhx%02hhx,0x%02hhx%02hhx,0x%02hhx%02hhx,{0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx}}", srcPtr[0], srcPtr[1], srcPtr[2], srcPtr[3], srcPtr[4], srcPtr[5], srcPtr[6], srcPtr[7], srcPtr[8], srcPtr[9], srcPtr[10], srcPtr[11], srcPtr[12], srcPtr[13], srcPtr[14], srcPtr[15]);
         output.resize(size - 1);
         return output;
     }
     else if (format == UUID::Format::URN) [[unlikely]]
     {
-        return "urn:uuid:" + toString(uuid, UUID::Format::D);
+        return "urn:uuid:" + toString(UUID::Format::D);
     }
     else if (format == UUID::Format::Base64) [[unlikely]]
     {
-        return Base64::encode(&uuid._part1, sizeof(uuid._part1) + sizeof(uuid._part2));
+        return Base64::encode(&_part1, sizeof(_part1) + sizeof(_part2));
     }
 
     throw std::runtime_error("Bad UUID format");
 }
 
-UUID UUID::toUUID(const std::string& uuidStr)
+UUID& UUID::fromString(const char* uuidPtr, std::size_t uuidSize)
 {
-    UUID uuid;
-
-    uint32_t* part1 = ((uint32_t*)(&uuid._part1)) + 1;
-    uint16_t* part2 = ((uint16_t*)(&uuid._part1)) + 1;
-    uint16_t* part3 = ((uint16_t*)(&uuid._part1));
-    uint8_t* part4 = ((uint8_t*)(&uuid._part2)) + 7;
-    uint8_t* part5 = ((uint8_t*)(&uuid._part2)) + 6;
-    uint8_t* part6 = ((uint8_t*)(&uuid._part2)) + 5;
-    uint8_t* part7 = ((uint8_t*)(&uuid._part2)) + 4;
-    uint8_t* part8 = ((uint8_t*)(&uuid._part2)) + 3;
-    uint8_t* part9 = ((uint8_t*)(&uuid._part2)) + 2;
-    uint8_t* part10 = ((uint8_t*)(&uuid._part2)) + 1;
-    uint8_t* part11 = ((uint8_t*)(&uuid._part2));
-
-    const char* data = uuidStr.c_str();
+    uint8_t* dstPtr = reinterpret_cast<uint8_t*>(&_part1);
 
     int scanRes = 0;
 
-    size_t uuidSize = uuidStr.size();
     if (uuidSize == 36) [[likely]]
     {
-        scanRes = UUID_SSCANF(data, "%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+        scanRes = UUID_SSCANF(uuidPtr, "%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx", dstPtr, dstPtr + 1, dstPtr + 2, dstPtr + 3, dstPtr + 4, dstPtr + 5, dstPtr + 6, dstPtr + 7, dstPtr + 8, dstPtr + 9, dstPtr + 10, dstPtr + 11, dstPtr + 12, dstPtr + 13, dstPtr + 14, dstPtr + 15);
     }
     else if (uuidSize == 32) [[unlikely]]
     {
-        scanRes = UUID_SSCANF(data, "%08X%04hX%04hX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+        scanRes = UUID_SSCANF(uuidPtr, "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx", dstPtr, dstPtr + 1, dstPtr + 2, dstPtr + 3, dstPtr + 4, dstPtr + 5, dstPtr + 6, dstPtr + 7, dstPtr + 8, dstPtr + 9, dstPtr + 10, dstPtr + 11, dstPtr + 12, dstPtr + 13, dstPtr + 14, dstPtr + 15);
     }
     else if (uuidSize == 38) [[unlikely]]
     {
-        if (data[0] == '{')
+        if (uuidPtr[0] == '{')
         {
-            scanRes = UUID_SSCANF(data, "{%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+            scanRes = UUID_SSCANF(uuidPtr, "{%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx}", dstPtr, dstPtr + 1, dstPtr + 2, dstPtr + 3, dstPtr + 4, dstPtr + 5, dstPtr + 6, dstPtr + 7, dstPtr + 8, dstPtr + 9, dstPtr + 10, dstPtr + 11, dstPtr + 12, dstPtr + 13, dstPtr + 14, dstPtr + 15);
         }
         else
         {
-            scanRes = UUID_SSCANF(data, "(%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX)", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+            scanRes = UUID_SSCANF(uuidPtr, "(%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx)", dstPtr, dstPtr + 1, dstPtr + 2, dstPtr + 3, dstPtr + 4, dstPtr + 5, dstPtr + 6, dstPtr + 7, dstPtr + 8, dstPtr + 9, dstPtr + 10, dstPtr + 11, dstPtr + 12, dstPtr + 13, dstPtr + 14, dstPtr + 15);
         }
     }
     else if (uuidSize == 68) [[unlikely]]
     {
-        scanRes = UUID_SSCANF(data, "{0x%08X,0x%04hX,0x%04hX,{0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX,0x%02hhX}}", part1, part2, part3, part4, part5, part6, part7, part8, part9, part10, part11);
+        scanRes = UUID_SSCANF(uuidPtr, "{0x%02hhx%02hhx%02hhx%02hhx,0x%02hhx%02hhx,0x%02hhx%02hhx,{0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx,0x%02hhx}}", dstPtr, dstPtr + 1, dstPtr + 2, dstPtr + 3, dstPtr + 4, dstPtr + 5, dstPtr + 6, dstPtr + 7, dstPtr + 8, dstPtr + 9, dstPtr + 10, dstPtr + 11, dstPtr + 12, dstPtr + 13, dstPtr + 14, dstPtr + 15);
     }
     else if (uuidSize == 45) [[unlikely]]
     {
-        return toUUID(uuidStr.substr(9, 36));
+        return fromString(uuidPtr + 9, 36);
     }
     else if (uuidSize == 24) [[unlikely]]
     {
-        std::vector<uint8_t> res = Base64::decode(uuidStr);
-        const uint64_t* srcPtr2 = reinterpret_cast<const uint64_t*>(res.data());
-        uuid._part1 = srcPtr2[0];
-        uuid._part2 = srcPtr2[1];
-        scanRes = 11;
+        uint8_t dstPtr[16];
+        uint64_t dstSize = 16;
+        if (Base64::succeed(Base64::decode(uuidPtr, uuidSize, dstPtr, dstSize))) [[likely]]
+        {
+            const uint64_t* srcPtr2 = reinterpret_cast<const uint64_t*>(dstPtr);
+            _part1 = srcPtr2[0];
+            _part2 = srcPtr2[1];
+            scanRes = 16;
+        }
     }
 
-    if (scanRes != 11) [[unlikely]]
-    {
-        throw std::logic_error("Unvalid UUID format");
-    }
+        if (scanRes != 16) [[unlikely]]
+        {
+            throw std::logic_error("Unvalid UUID format");
+        }
 
-    return uuid;
+    return *this;
+}
+
+UUID& UUID::fromString(const char* uuidStr)
+{
+    return fromString(uuidStr, strlen(uuidStr));
+}
+
+UUID& UUID::fromString(const std::string& uuidStr)
+{
+    return fromString(uuidStr.c_str(), uuidStr.size());
 }
 
 UUID UUID::generate()

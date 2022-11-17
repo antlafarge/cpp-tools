@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cctype>
+#include <iomanip>
 #include <iostream>
 
 #include "UUID.h"
@@ -12,6 +13,29 @@ std::string toLower(const std::string& str)
         c = (char)std::tolower((int)c);
     }
     return result;
+}
+
+std::string debugUUID(const UUID& uuid)
+{
+    std::stringstream stream;
+    stream << std::setfill('0');
+
+    const uint64_t* ptr64 = reinterpret_cast<const uint64_t*>(&uuid);
+    stream << "UUID_64[" << std::hex << "0x" << std::setw(16) << ptr64[0]  << " 0x" << std::setw(16) << ptr64[1] << "]" << std::endl;
+
+    stream << "UUID__8[";
+    const uint8_t* ptr8 = reinterpret_cast<const uint8_t*>(&uuid);
+    for (int i = 0; i < 16; i++)
+    {
+        stream << "0x" << std::hex << std::setw(2) << (uint16_t)*(ptr8 + i);
+        if (i < 15)
+        {
+            stream << " ";
+        }
+    }
+    stream << "]";
+
+    return stream.str();
 }
 
 void test(const std::string& uuidStr, UUID::Format format)
@@ -29,10 +53,21 @@ void test(const std::string& uuidStr, UUID::Format format)
     }
     std::string uuidResult = UUID(uuidStr).toString(format);
     std::cout << "Result=" << uuidResult << " (" << uuidResult.size() << ")" << std::endl;
-    bool passed = (uuidStr2 == uuidResult);
-    std::cout << (passed ? "PASSED" : "FAILED") << std::endl
+    bool equal = (uuidStr2 == uuidResult);
+    std::cout << (equal ? "PASSED" : "FAILED") << std::endl
         << std::endl;
-    assert(passed);
+    assert(equal);
+}
+
+void test2(const UUID& uuid, const std::string& uuidStr)
+{
+    std::cout << debugUUID(uuid) << std::endl;
+    std::string uuidStr2 = uuid.toString();
+    std::cout << uuidStr2 << std::endl;
+    bool equal = (uuidStr2 == uuidStr);
+    std::cout << (equal ? "PASSED" : "FAILED") << std::endl
+        << std::endl;
+    assert(equal);
 }
 
 int main()
@@ -53,13 +88,15 @@ int main()
     test(uuidStr6, UUID::Format::URN);
     test(uuidStr7, UUID::Format::Base64);
 
-    uint64_t uuidPtr[2] = { 0x1122334455667788, 0x9988776655443322 };
-    std::string uuidStr8 = UUID(uuidPtr).toString();
-    std::cout << uuidStr8 << std::endl;
-    bool equal = (uuidStr8 == "11223344-5566-7788-9988-776655443322");
-    std::cout << (equal ? "PASSED" : "FAILED") << std::endl
-        << std::endl;
-    assert(equal);
+    test2(UUID("00112233-4455-6677-8899-AABBCCDDEEFF"), "00112233-4455-6677-8899-aabbccddeeff");
+
+    uint8_t uuidPtr[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
+    test2(UUID(uuidPtr), "00112233-4455-6677-8899-aabbccddeeff");
+
+    uint8_t uuidPtr2[16] = { 0x33, 0x22, 0x11, 0x00, 0x55, 0x44, 0x77, 0x66, /*0xC8*/0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
+    test2(UUID(uuidPtr2, true), "00112233-4455-6677-8899-aabbccddeeff");
+
+    test2(UUID("ABEiM0RVZneImaq7zN3u/w=="), "00112233-4455-6677-8899-aabbccddeeff");
 
     UUID generated = UUID::generate();
     std::cout << "Generated:" << std::endl
