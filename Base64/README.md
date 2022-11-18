@@ -31,7 +31,7 @@ void encodeData()
 void encodeData()
 {
 	std::vector<uint8_t> byteVector = { 3, 2, 1, 0 };
-	std::string encodedData = Base64::encode(byteVector.data(), byteVector.size());
+	std::string encodedData = Base64::encode(byteVector);
 	std::cout << encodedData << std::endl; // AwIBAA==
 }
 ```
@@ -45,7 +45,7 @@ void encodeData()
 void encodeData()
 {
 	std::string byteString = "A string to encode";
-	std::string encodedData = Base64::encode(byteString.data(), byteString.size());
+	std::string encodedData = Base64::encode(byteString);
 	std::cout << encodedData << std::endl; // QSBzdHJpbmcgdG8gZW5jb2Rl
 }
 ```
