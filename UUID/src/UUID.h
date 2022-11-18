@@ -104,7 +104,7 @@ public:
     /// @note Possible variants : 0, 1, 2, 3
     void setVariant(uint8_t variant);
 
-    /// @brief Generate a new UUID (variant 1; version 4 (fully randomized))
+    /// @brief Generate a new UUID (variant 1, version 4 (fully randomized))
     /// @return Generated UUID
     static UUID generate();
 
