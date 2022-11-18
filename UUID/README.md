@@ -1,4 +1,4 @@
-Universally unique identifier (UUID)
+Universally Unique IDentifier (UUID)
 ====================================
 
 ## String to UUID
