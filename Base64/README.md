@@ -182,7 +182,7 @@ For example `QUJ=` (instead of `QUI=`) decoding result will be `AB` with a warni
 
 Aggregation of MissingPadding and InvalidPaddingBits warnings  
 cf. MissingPaddingCharacters  
-cf. InvalidPaddingBits
+cf. InvalidPaddingBits  
 For example `QR` or `QR=` (instead of `QQ==`) decoding result will be `A` with a warning `MissingPaddingCharactersAndInvalidPaddingBits`  
 For example `QUJ` (instead of `QUI=`) decoding result will be `AB` with a warning `MissingPaddingCharactersAndInvalidPaddingBits`
 
