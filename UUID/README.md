@@ -18,7 +18,7 @@ Universally unique identifier (UUID)
     std::cout << uuid.toString(UUID::Format::URN);    // urn:uuid:123e4567-e89b-12d3-a456-426614174000
     std::cout << uuid.toString(UUID::Format::Base64); // Ej5FZ+ibEtOkVkJmFBdAAA==
 
-## Generate an UUID (fully randomized, version 4)
+## Generate an UUID (variant 1; version 4 (fully randomized))
 
     UUID uuid = UUID::generate(); // 1f979ca4-ad29-40ef-8352-f2082cba44d4
     std::cout << uuid.getVersion(); // 4
