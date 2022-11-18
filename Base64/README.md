@@ -17,8 +17,8 @@ Base64
 void encodeData()
 {
 	uint8_t byteArray[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	auto encodedData1 = Base64::encode(byteArray, 10);
-	std::cout << encodedData1 << std::endl; // AAECAwQFBgcICQ==
+	std::string encodedData = Base64::encode(byteArray, 10);
+	std::cout << encodedData << std::endl; // AAECAwQFBgcICQ==
 }
 ```
 
@@ -30,8 +30,8 @@ void encodeData()
 
 void encodeData()
 {
-	std::vector<uint8_t> data = { 3, 2, 1, 0 };
-	auto encodedData = Base64::encode(data.data(), data.size());
+	std::vector<uint8_t> byteVector = { 3, 2, 1, 0 };
+	std::string encodedData = Base64::encode(byteVector.data(), byteVector.size());
 	std::cout << encodedData << std::endl; // AwIBAA==
 }
 ```
@@ -44,8 +44,8 @@ void encodeData()
 
 void encodeData()
 {
-	std::string data = "A string to encode";
-	auto encodedData = Base64::encode(data.data(), data.size());
+	std::string byteString = "A string to encode";
+	std::string encodedData = Base64::encode(byteString.data(), byteString.size());
 	std::cout << encodedData << std::endl; // QSBzdHJpbmcgdG8gZW5jb2Rl
 }
 ```
@@ -59,8 +59,8 @@ void encodeData()
 
 void encodeData()
 {
-	const char* data = "A c-string to encode";
-	auto encodedData = Base64::encode(data, strlen(data));
+	const char* byteCString = "A c-string to encode";
+	std::string encodedData = Base64::encode(byteCString, strlen(byteCString));
 	std::cout << encodedData << std::endl; // QSBjLXN0cmluZyB0byBlbmNvZGU=
 }
 ```
