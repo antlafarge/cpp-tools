@@ -28,7 +28,14 @@ Universally unique identifier (UUID)
 
 The first 128 bits of the buffer will be used to create the UUID
 
+    // Variant 1
     const uint8_t buffer[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
     UUID uuid(buffer);
+    std::cout << uuid.toString(); // "00112233-4455-6677-8899-aabbccddeeff"
+
+    // Variant 2
+    const uint8_t buffer[16] = { 0x33, 0x22, 0x11, 0x00, 0x55, 0x44, 0x77, 0x66, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
+    UUID uuid(buffer, true);
+    std::cout << uuid.toString(); // "00112233-4455-6677-8899-aabbccddeeff"
 
 *Note: `const char*` will be processed as c-string, and `const uint8_t*` will be processed as raw buffer input*
