@@ -18,9 +18,6 @@
     <ClCompile Include="..\Base64\src\Base64.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Base64\src\Base64.helpers.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\UUID.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -30,9 +27,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Base64\src\Base64.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Base64\src\Base64.helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\UUID.h">

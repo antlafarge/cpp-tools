@@ -160,38 +160,45 @@ catch (const std::exception& ex)
 
 # Warning codes
 
-If you get a warning as a result, the data was successfully processed, but the result data might be invalid
+If you get a warning as a result, the data was successfully processed, but the result data might be invalid  
+When using high-level functions (from `base64.helpers.h`), the warnings are lost because errors handling is done by catching exceptions
 
-## 1 MissingPadding (0x01)
+## 1 MissingPaddingCharacters (0x01)
 
-    Missing base64 padding characters  
-    Warning indicating base64 string might be truncated
+Missing base64 padding characters  
+Warning indicating base64 string might be truncated  
+For example `QQ` or `QQ=` (instead of `QQ==`) decoding result will be `A` with a warning `MissingPaddingCharacters`  
+For example `QUI` (instead of `QQI=`) decoding result will be `AB` with a warning `MissingPaddingCharacters`
 
 ## 2 InvalidPaddingBits (0x02)
 
-    Invalid padding bits  
-    Padding bits are not equal to 0  
-    Warning indicating base64 string might be truncated
+Invalid padding bits  
+Padding bits are not equal to 0  
+Warning indicating base64 string might be truncated  
+For example `QR==` (instead of `QQ==`) decoding result will be `A` with a warning `InvalidPaddingBits`  
+For example `QUJ=` (instead of `QUI=`) decoding result will be `AB` with a warning `InvalidPaddingBits`
 
 ## 3 MissingPaddingCharactersAndInvalidPaddingBits (0x03)
 
-    Aggregation of MissingPadding and InvalidPaddingBits warnings  
-    cf. MissingPadding  
-    cf. InvalidPaddingBits
+Aggregation of MissingPadding and InvalidPaddingBits warnings  
+cf. MissingPaddingCharacters  
+cf. InvalidPaddingBits
+For example `QR` or `QR=` (instead of `QQ==`) decoding result will be `A` with a warning `MissingPaddingCharactersAndInvalidPaddingBits`  
+For example `QUJ` (instead of `QUI=`) decoding result will be `AB` with a warning `MissingPaddingCharactersAndInvalidPaddingBits`
 
 # Error codes
 
 ## 32 InvalidDestinationBufferSize (0x20)
 
-    Destination buffer size too small  
-    Allocate greater destination buffer
+Destination buffer size too small  
+Allocate greater destination buffer
 
 ## 96 InvalidSourceBufferSize (0x60)
 
-    Invalid source buffer size  
-    Base64 encoded data size must be a multiple of 4
+Invalid source buffer size  
+Base64 encoded data size must be a multiple of 4
 
 ## 97 InvalidCharacter (0x61)
 
-    Invalid base64 character
-    Source data is not a valid base64 encoded string
+Invalid base64 character  
+Source data is not a valid base64 encoded string

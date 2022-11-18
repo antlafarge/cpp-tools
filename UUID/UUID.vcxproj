@@ -140,13 +140,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Base64\src\Base64.cpp" />
-    <ClCompile Include="..\Base64\src\Base64.helpers.cpp" />
     <ClCompile Include="src\UUID.cpp" />
     <ClCompile Include="test\test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Base64\src\Base64.h" />
-    <ClInclude Include="..\Base64\src\Base64.helpers.h" />
     <ClInclude Include="src\UUID.h" />
   </ItemGroup>
   <ItemGroup>
