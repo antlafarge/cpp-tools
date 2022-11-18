@@ -31,7 +31,7 @@ public:
     /// @param uuidStr Source string
     UUID(const std::string& uuidStr);
 
-    /// @brief Create from 128 bits pointer
+    /// @brief Create from 128 bits raw pointer
     /// @param srcPtr Source pointer
     /// @note Variant1 format : { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF }
     /// @note Variant2 format : { 0x33, 0x22, 0x11, 0x00, 0x55, 0x44, 0x77, 0x66, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
@@ -104,7 +104,7 @@ public:
     /// @note Possible variants : 0, 1, 2, 3
     void setVariant(uint8_t variant);
 
-    /// @brief Generate a new UUID (variant 1; version 4, fully randomized)
+    /// @brief Generate a new UUID (variant 1; version 4 (fully randomized))
     /// @return Generated UUID
     static UUID generate();
 
