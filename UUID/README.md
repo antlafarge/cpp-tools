@@ -31,4 +31,4 @@ The first 128 bits of the buffer will be used to create the UUID
     const uint8_t buffer[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
     UUID uuid(buffer);
 
-*Note: `const char\*` will be processed as c-string, and `const uint8_t\*` will be processed as raw buffer input*
+*Note: `const char*` will be processed as c-string, and `const uint8_t*` will be processed as raw buffer input*
