@@ -171,7 +171,7 @@ namespace JSON
 		template<class TString>
 		Field(const TString& fieldName, const Options& options = Options());
 
-		Field(const Options& options = Options());
+		Field(const Options& options);
 
 		Field(const Field& other);
 
@@ -180,8 +180,29 @@ namespace JSON
 		Field& operator=(const Field& right);
 
 		Field& operator=(Field&& right) noexcept;
-	};
 
+		bool operator==(const Field& other) const;
+
+		bool operator!=(const Field& other) const;
+
+		operator std::string() const;
+	};
+};
+
+namespace std
+{
+	template<>
+	struct hash<JSON::Field>
+	{
+		std::size_t operator()(const JSON::Field& field) const
+		{
+			return std::hash<std::string>()(field.name);
+		}
+	};
+};
+
+namespace JSON
+{
 	struct Value
 	{
 		Type type = Type::Null;
@@ -195,10 +216,12 @@ namespace JSON
 			long double* number_f;
 			std::string* string;
 			std::vector<Value>* array;
-			std::unordered_map<std::string, Value>* object;
+			std::unordered_map<Field, Value>* object;
 		};
 
 		Value() = default;
+
+		Value(Type type);
 
 		Value(const bool value);
 
@@ -235,6 +258,8 @@ namespace JSON
 		Value(const std::vector<Value>& value);
 
 		Value(const std::unordered_map<std::string, Value>& value);
+
+		Value(const std::unordered_map<Field, Value>& value);
 
 		Value(const Value& other);
 
@@ -284,11 +309,29 @@ namespace JSON
 
 		Value& operator=(const std::unordered_map<std::string, Value>& value);
 
+		Value& operator=(const std::unordered_map<Field, Value>& value);
+
 		bool operator==(const Type type2) const;
 
 		bool operator==(const Value& other) const;
 
 		bool operator!=(const Value& right) const;
+
+		static Value Null();
+
+		static Value Boolean();
+
+		static Value NumberInteger();
+
+		static Value NumberUInteger();
+
+		static Value NumberFloat();
+
+		static Value String();
+
+		static Value Array();
+
+		static Value Object();
 
 	protected:
 
@@ -655,5 +698,9 @@ namespace JSON
 
 #pragma endregion
 }
+
+std::istream& operator>>(std::istream& stream, JSON::Field& field);
+
+std::ostream& operator<<(std::ostream& stream, const JSON::Field& key);
 
 #pragma GCC diagnostic pop

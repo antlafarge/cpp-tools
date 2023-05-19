@@ -657,37 +657,27 @@ int main()
 
 	// VALUE
 
-	JSON::Value jsValue = JSON::Value
-	(
-		std::vector<JSON::Value>
-		{
-			JSON::Value(),
-			JSON::Value(false),
-			JSON::Value(true),
-			JSON::Value(INT8_MIN),
-			JSON::Value(UINT8_MAX),
-			JSON::Value(INT16_MIN),
-			JSON::Value(UINT16_MAX),
-			JSON::Value(INT32_MIN),
-			JSON::Value(INT32_MAX),
-			JSON::Value(INT64_MIN),
-			JSON::Value(UINT64_MAX),
-			JSON::Value((float)PI),
-			JSON::Value((double)PI),
-			JSON::Value(PI),
-			JSON::Value("STRING_2"),
-			JSON::Value
-			(
-				std::unordered_map<std::string, JSON::Value>
-				{
-					{ "field1", JSON::Value{ "value1" } },
-					{ "field2", JSON::Value{ "value2" } }
-				}
-			)
-		}
-	);
+	JSON::Value jsObject = JSON::Value::Object();
+	(*jsObject.object)["A"] = JSON::Value();
+	(*jsObject.object)["B"] = JSON::Value(false);
+	(*jsObject.object)["C"] = JSON::Value(true);
+	(*jsObject.object)["D"] = JSON::Value(INT8_MIN);
+	(*jsObject.object)["E"] = JSON::Value(UINT8_MAX);
+	(*jsObject.object)["F"] = JSON::Value(INT16_MIN);
+	(*jsObject.object)["G"] = JSON::Value(UINT16_MAX);
+	(*jsObject.object)["H"] = JSON::Value(INT32_MIN);
+	(*jsObject.object)["I"] = JSON::Value(INT32_MAX);
+	(*jsObject.object)["J"] = JSON::Value(INT64_MIN);
+	(*jsObject.object)["K"] = JSON::Value(UINT64_MAX);
+	(*jsObject.object)["L"] = JSON::Value((float)PI);
+	(*jsObject.object)["M"] = JSON::Value((double)PI);
+	(*jsObject.object)["N"] = JSON::Value(PI);
+	(*jsObject.object)["O"] = JSON::Value("STRING_2");
+	(*jsObject.object)["P"] = JSON::Value::Array();
+	(*jsObject.object)["P"].array->push_back(JSON::Value{ "value1" });
+	(*jsObject.object)["P"].array->push_back(JSON::Value{ "value2" });
 
-	test("JSON::Value", jsValue);
+	test("JSON::Value", jsObject);
 
 	// FILE
 

@@ -52,8 +52,8 @@ namespace JSON
 
 	Options& Options::operator=(Options&& other) noexcept
 	{
-		encoding = std::move(other.encoding);
-		precision = std::move(other.precision);
+		encoding = other.encoding;
+		precision = other.precision;
 		return *this;
 	}
 
@@ -98,8 +98,8 @@ namespace JSON
 	}
 
 	Field::Field(Field&& other) noexcept
-		: name(other.name)
-		, options(other.options)
+		: name(std::move(other.name))
+		, options(std::move(other.options))
 	{
 	}
 
@@ -115,6 +115,28 @@ namespace JSON
 		name = std::move(right.name);
 		options = std::move(right.options);
 		return *this;
+	}
+
+	bool Field::operator==(const Field& other) const
+	{
+		return name == other.name;
+	}
+
+	bool Field::operator!=(const Field& other) const
+	{
+		return name != other.name;
+	}
+
+	Field::operator std::string() const
+	{
+		return name;
+	}
+
+	Value::Value(Type type)
+		: type(Type::Null)
+		, ptr(nullptr)
+	{
+		*this = type;
 	}
 
 	Value::Value(const bool value)
@@ -223,7 +245,18 @@ namespace JSON
 
 	Value::Value(const std::unordered_map<std::string, Value>& value)
 		: type(Type::Object)
-		, object(new std::unordered_map<std::string, Value>(value))
+		, object(new std::unordered_map<Field, Value>())
+	{
+		object->reserve(value.size());
+		for (auto& pair : value)
+		{
+			(*object)[pair.first] = pair.second;
+		}
+	}
+
+	Value::Value(const std::unordered_map<Field, Value>& value)
+		: type(Type::Object)
+		, object(new std::unordered_map<Field, Value>(value))
 	{
 	}
 
@@ -252,8 +285,8 @@ namespace JSON
 
 	Value& Value::operator=(Value&& other) noexcept
 	{
-		type = std::move(other.type);
-		ptr = std::move(other.ptr);
+		std::swap(type, other.type);
+		std::swap(ptr, other.ptr);
 		return *this;
 	}
 
@@ -283,7 +316,7 @@ namespace JSON
 				array = new std::vector<Value>;
 				break;
 			case Type::Object: [[unlikely]]
-				object = new std::unordered_map<std::string, Value>;
+				object = new std::unordered_map<Field, Value>;
 				break;
 			case Type::Null: [[likely]]
 			default: [[unlikely]]
@@ -416,6 +449,17 @@ namespace JSON
 	Value& Value::operator=(const std::unordered_map<std::string, Value>& value)
 	{
 		*this = Type::Object;
+		object->reserve(value.size());
+		for (auto& pair : value)
+		{
+			(*object)[pair.first] = pair.second;
+		}
+		return *this;
+	}
+
+	Value& Value::operator=(const std::unordered_map<Field, Value>& value)
+	{
+		*this = Type::Object;
 		*object = value;
 		return *this;
 	}
@@ -487,6 +531,46 @@ namespace JSON
 		return !(*this == right);
 	}
 
+	Value Value::Null()
+	{
+		return Value(Type::Null);
+	}
+
+	Value Value::Boolean()
+	{
+		return Value(Type::Boolean);
+	}
+
+	Value Value::NumberInteger()
+	{
+		return Value(Type::NumberInteger);
+	}
+
+	Value Value::NumberUInteger()
+	{
+		return Value(Type::NumberUInteger);
+	}
+
+	Value Value::NumberFloat()
+	{
+		return Value(Type::NumberFloat);
+	}
+
+	Value Value::String()
+	{
+		return Value(Type::String);
+	}
+
+	Value Value::Array()
+	{
+		return Value(Type::Array);
+	}
+
+	Value Value::Object()
+	{
+		return Value(Type::Object);
+	}
+
 	void Value::copyData(const Value& other)
 	{
 		switch (other.type)
@@ -510,7 +594,7 @@ namespace JSON
 			array = { new std::vector<Value>(*other.array) };
 			break;
 		case Type::Object:
-			object = { new std::unordered_map<std::string, Value>(*other.object) };
+			object = { new std::unordered_map<Field, Value>(*other.object) };
 			break;
 		case Type::Null:
 		default:
@@ -1528,6 +1612,18 @@ namespace JSON
 	}
 
 #pragma endregion
+}
+
+std::istream& operator>>(std::istream& stream, JSON::Field& field)
+{
+	stream >> field.name;
+	return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const JSON::Field& field)
+{
+	stream << field.name;
+	return stream;
 }
 
 #pragma GCC diagnostic pop
