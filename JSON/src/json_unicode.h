@@ -33,7 +33,7 @@ namespace JSON
 
 	Encoding operator|(Encoding lhs, Encoding rhs);
 
-	bool operator&(Encoding lhs, Encoding rhs);
+	Encoding operator&(Encoding lhs, Encoding rhs);
 
 	uint32_t codePointToUtf8(uint32_t codePoint);
 

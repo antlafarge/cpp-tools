@@ -677,7 +677,7 @@ namespace JSON
 			options.encoding = JSON_DEFAULT_ENCODING;
 		}
 
-			if (options & Encoding::UTF8) [[likely]]
+			if ((options & Encoding::UTF8) == Encoding::UTF8) [[likely]]
 			{
 				stream << '"' << *value << '"';
 			}
@@ -699,7 +699,7 @@ namespace JSON
 			options.encoding = JSON_DEFAULT_ENCODING;
 		}
 
-			if (options & Encoding::UTF8) [[likely]]
+			if ((options & Encoding::UTF8) == Encoding::UTF8) [[likely]]
 			{
 				stream << '"';
 				utf16ToUtf8(stream, *value);
