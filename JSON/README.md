@@ -123,14 +123,16 @@ JSON::deserialize(std::ifstream("data.json"), data);
 If you want to keep dynamic JSON data in your program, you can use the class `JSON::Value`.
 
 ```cpp
-JSON::Value jsValue(3.14);
-std::string json = JSON::serialize(jsValue);
+JSON::Value jsValue3(3.14159);
+std::streamsize precision = 3;
+std::string json = JSON::serialize(jsValue3, JSON::Options(precision));
 
 JSON::Value jsValue2;
 JSON::deserialize(json, jsValue2);
 
-if (jsValue2.type == JSON::Type::NumberFloat)
+if (jsValue2 == JSON::Type::NumberF)
 {
-	float pi = (float)(*jsValue2.data.number_f);
+	float pi = (float)(*jsValue2.ptrNumberF);
+	std::cout << pi << std::endl; // 3.14
 }
 ```
