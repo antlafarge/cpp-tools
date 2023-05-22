@@ -131,6 +131,8 @@ namespace JSON
 
 		std::streamsize precision = -1;
 
+		static Options merge(const Options& optionsOverride, const Options& optionsDefault);
+
 		Options() = default;
 
 		Options(Encoding encoding);

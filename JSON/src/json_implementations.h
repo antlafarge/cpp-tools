@@ -48,17 +48,19 @@ namespace JSON
 	template<class TValue, class... TValues>
 	void serializeFieldValue(std::ostream& stream, Options& options, const FieldValue<TValue>& fieldValue, const FieldValue<TValues>&... fieldValues)
 	{
+		Options optionsMerged = Options::merge(options, fieldValue.field.options);
 		serializeFieldValue(stream, options, fieldValue);
-		serializeUnicodeChar(stream, codePointToUnicode(',', options), options);
+		serializeUnicodeChar(stream, codePointToUnicode(',', optionsMerged), optionsMerged);
 		serializeFieldValue(stream, options, fieldValues...);
 	}
 
 	template<class TValue>
 	void serializeFieldValue(std::ostream& stream, Options& options, const FieldValue<TValue>& fieldValue)
 	{
-		serializeValue(stream, &fieldValue.field.name, options);
-		serializeUnicodeChar(stream, codePointToUnicode(':', options), options);
-		serializeValue(stream, &fieldValue.value, options);
+		Options optionsMerged = Options::merge(options, fieldValue.field.options);
+		serializeValue(stream, &fieldValue.field.name, optionsMerged);
+		serializeUnicodeChar(stream, codePointToUnicode(':', optionsMerged), optionsMerged);
+		serializeValue(stream, &fieldValue.value, optionsMerged);
 	}
 
 	template<class TValue>

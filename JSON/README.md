@@ -21,7 +21,7 @@ struct Sample
 	JSON(
 		"NullField", null,
 		"WorkingField", working,
-		JSON::Field("PiField", 2), pi, // Set float precision to 2 digits
+		JSON::Field("PiField", 3), pi, // Set float precision to 2 digits
 		"ProverbField", proverb,
 		"FibonacciField", fibonacci
 	);
@@ -35,7 +35,7 @@ You should use the types declared in [cstdint](https://en.cppreference.com/w/cpp
 ```cpp
 Sample object{ {}, { true }, 3.1415926535, "Haste makes waste", { 0,1,1,2,3,5,8,13,21,34 } };
 std::string json = JSON::serialize(object);
-std::cout << json << std::endl; // {"NullField":null,"WorkingField":true,"PiField":3.1415926535000001,"ProverbField":"Haste makes waste","FibonacciField":[0,1,1,2,3,5,8,13,21,34]}
+std::cout << json << std::endl; // {"NullField":null,"WorkingField":true,"PiField":3.14,"ProverbField":"Haste makes waste","FibonacciField":[0,1,1,2,3,5,8,13,21,34]}
 ```
 
 Expected JSON output (formatted for display) :

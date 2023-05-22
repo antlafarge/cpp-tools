@@ -9,6 +9,14 @@
 
 namespace JSON
 {
+	Options Options::merge(const Options& optionsOverride, const Options& optionsDefault)
+	{
+		Options options;
+		options.precision = optionsOverride.precision != -1 ? optionsOverride.precision : optionsDefault.precision;
+		options.encoding = optionsOverride.encoding != Encoding::None ? optionsOverride.encoding : optionsDefault.encoding;
+		return options;
+	}
+
 	Options::Options(Encoding encoding)
 		: encoding(encoding)
 	{
