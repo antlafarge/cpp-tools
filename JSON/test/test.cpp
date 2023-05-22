@@ -657,27 +657,27 @@ int main()
 
 	// VALUE
 
-	JSON::Value jsObject = JSON::Value::Object();
-	(*jsObject.object)["A"] = JSON::Value();
-	(*jsObject.object)["B"] = JSON::Value(false);
-	(*jsObject.object)["C"] = JSON::Value(true);
-	(*jsObject.object)["D"] = JSON::Value(INT8_MIN);
-	(*jsObject.object)["E"] = JSON::Value(UINT8_MAX);
-	(*jsObject.object)["F"] = JSON::Value(INT16_MIN);
-	(*jsObject.object)["G"] = JSON::Value(UINT16_MAX);
-	(*jsObject.object)["H"] = JSON::Value(INT32_MIN);
-	(*jsObject.object)["I"] = JSON::Value(INT32_MAX);
-	(*jsObject.object)["J"] = JSON::Value(INT64_MIN);
-	(*jsObject.object)["K"] = JSON::Value(UINT64_MAX);
-	(*jsObject.object)["L"] = JSON::Value((float)PI);
-	(*jsObject.object)["M"] = JSON::Value((double)PI);
-	(*jsObject.object)["N"] = JSON::Value(PI);
-	(*jsObject.object)["O"] = JSON::Value("STRING_2");
-	(*jsObject.object)["P"] = JSON::Value::Array();
-	(*jsObject.object)["P"].array->push_back(JSON::Value{ "value1" });
-	(*jsObject.object)["P"].array->push_back(JSON::Value{ "value2" });
+	JSON::Value jsValue = JSON::Value::createObject();
+	jsValue.getObject()["A"] = JSON::Value();
+	jsValue.getObject()["B"] = JSON::Value(false);
+	jsValue.getObject()["C"] = JSON::Value(true);
+	jsValue.getObject()["D"] = JSON::Value(INT8_MIN);
+	jsValue.getObject()["E"] = JSON::Value(UINT8_MAX);
+	jsValue.getObject()["F"] = JSON::Value(INT16_MIN);
+	jsValue.getObject()["G"] = JSON::Value(UINT16_MAX);
+	jsValue.getObject()["H"] = JSON::Value(INT32_MIN);
+	jsValue.getObject()["I"] = JSON::Value(INT32_MAX);
+	jsValue.getObject()["J"] = JSON::Value(INT64_MIN);
+	jsValue.getObject()["K"] = JSON::Value(UINT64_MAX);
+	jsValue.getObject()["L"] = JSON::Value((float)PI);
+	jsValue.getObject()["M"] = JSON::Value((double)PI);
+	jsValue.getObject()["N"] = JSON::Value(PI);
+	jsValue.getObject()["O"] = JSON::Value("STRING_2");
+	jsValue.getObject()["P"] = JSON::Value::createArray();
+	jsValue.getObject()["P"].getArray().push_back(JSON::Value("value1"));
+	jsValue.getObject()["P"].getArray().push_back(JSON::Value("value2"));
 
-	test("JSON::Value", jsObject);
+	test("JSON::Value", jsValue);
 
 	// FILE
 

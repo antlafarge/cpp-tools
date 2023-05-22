@@ -141,122 +141,122 @@ namespace JSON
 
 	Value::Value(const bool value)
 		: type(Type::Boolean)
-		, boolean(new bool(value))
+		, ptrBoolean(new bool(value))
 	{
 	}
 
 	Value::Value(const int8_t value)
-		: type(Type::NumberInteger)
-		, number_i(new int64_t(static_cast<int64_t>(value)))
+		: type(Type::NumberI)
+		, ptrNumberI(new int64_t(static_cast<int64_t>(value)))
 	{
 	}
 
 	Value::Value(const int16_t value)
-		: type(Type::NumberInteger)
-		, number_i(new int64_t(static_cast<int64_t>(value)))
+		: type(Type::NumberI)
+		, ptrNumberI(new int64_t(static_cast<int64_t>(value)))
 	{
 	}
 
 	Value::Value(const int32_t value)
-		: type(Type::NumberInteger)
-		, number_i(new int64_t(static_cast<int64_t>(value)))
+		: type(Type::NumberI)
+		, ptrNumberI(new int64_t(static_cast<int64_t>(value)))
 	{
 	}
 
 	Value::Value(const int64_t value)
-		: type(Type::NumberInteger)
-		, number_i(new int64_t(value))
+		: type(Type::NumberI)
+		, ptrNumberI(new int64_t(value))
 	{
 	}
 
 	Value::Value(const uint8_t value)
-		: type(Type::NumberUInteger)
-		, number_u(new uint64_t(static_cast<uint64_t>(value)))
+		: type(Type::NumberU)
+		, ptrNumberU(new uint64_t(static_cast<uint64_t>(value)))
 	{
 	}
 
 	Value::Value(const uint16_t value)
-		: type(Type::NumberUInteger)
-		, number_u(new uint64_t(static_cast<uint64_t>(value)))
+		: type(Type::NumberU)
+		, ptrNumberU(new uint64_t(static_cast<uint64_t>(value)))
 	{
 	}
 
 	Value::Value(const uint32_t value)
-		: type(Type::NumberUInteger)
-		, number_u(new uint64_t(static_cast<uint64_t>(value)))
+		: type(Type::NumberU)
+		, ptrNumberU(new uint64_t(static_cast<uint64_t>(value)))
 	{
 	}
 
 	Value::Value(const uint64_t value)
-		: type(Type::NumberUInteger)
-		, number_u(new uint64_t(value))
+		: type(Type::NumberU)
+		, ptrNumberU(new uint64_t(value))
 	{
 	}
 
 	Value::Value(const float value)
-		: type(Type::NumberFloat)
-		, number_f(new long double(value))
+		: type(Type::NumberF)
+		, ptrNumberF(new long double(value))
 	{
 	}
 
 	Value::Value(const double value)
-		: type(Type::NumberFloat)
-		, number_f(new long double(value))
+		: type(Type::NumberF)
+		, ptrNumberF(new long double(value))
 	{
 	}
 
 	Value::Value(const long double value)
-		: type(Type::NumberFloat)
-		, number_f(new long double(value))
+		: type(Type::NumberF)
+		, ptrNumberF(new long double(value))
 	{
 	}
 
 	Value::Value(const char* value)
 		: type(Type::String)
-		, string(new std::string(value))
+		, ptrString(new std::string(value))
 	{
 	}
 
 	Value::Value(const std::string& value)
 		: type(Type::String)
-		, string(new std::string(value))
+		, ptrString(new std::string(value))
 	{
 	}
 
 	Value::Value(const wchar_t* value, const Options& options)
 		: type(Type::String)
-		, string(new std::string())
+		, ptrString(new std::string())
 	{
-		utf16ToUtf8(*string, std::wstring(value), options.encoding);
+		utf16ToUtf8(*ptrString, std::wstring(value), options.encoding);
 	}
 
 	Value::Value(const std::wstring& value, const Options& options)
 		: type(Type::String)
-		, string(new std::string())
+		, ptrString(new std::string())
 	{
-		utf16ToUtf8(*string, value, options.encoding);
+		utf16ToUtf8(*ptrString, value, options.encoding);
 	}
 
 	Value::Value(const std::vector<Value>& value)
 		: type(Type::Array)
-		, array(new std::vector<Value>(value))
+		, ptrArray(new std::vector<Value>(value))
 	{
 	}
 
 	Value::Value(const std::unordered_map<std::string, Value>& value)
 		: type(Type::Object)
-		, object(new std::unordered_map<Field, Value>())
+		, ptrObject(new std::unordered_map<Field, Value>())
 	{
-		object->reserve(value.size());
+		ptrObject->reserve(value.size());
 		for (auto& pair : value)
 		{
-			(*object)[pair.first] = pair.second;
+			(*ptrObject)[pair.first] = pair.second;
 		}
 	}
 
 	Value::Value(const std::unordered_map<Field, Value>& value)
 		: type(Type::Object)
-		, object(new std::unordered_map<Field, Value>(value))
+		, ptrObject(new std::unordered_map<Field, Value>(value))
 	{
 	}
 
@@ -298,25 +298,25 @@ namespace JSON
 			switch (type2)
 			{
 			case Type::Boolean: [[unlikely]]
-				boolean = new bool;
+				ptrBoolean = new bool;
 				break;
-			case Type::NumberInteger: [[unlikely]]
-				number_i = new int64_t;
+			case Type::NumberI: [[unlikely]]
+				ptrNumberI = new int64_t;
 				break;
-			case Type::NumberUInteger: [[unlikely]]
-				number_u = new uint64_t;
+			case Type::NumberU: [[unlikely]]
+				ptrNumberU = new uint64_t;
 				break;
-			case Type::NumberFloat: [[unlikely]]
-				number_f = new long double;
+			case Type::NumberF: [[unlikely]]
+				ptrNumberF = new long double;
 				break;
 			case Type::String: [[unlikely]]
-				string = new std::string;
+				ptrString = new std::string;
 				break;
 			case Type::Array: [[unlikely]]
-				array = new std::vector<Value>;
+				ptrArray = new std::vector<Value>;
 				break;
 			case Type::Object: [[unlikely]]
-				object = new std::unordered_map<Field, Value>;
+				ptrObject = new std::unordered_map<Field, Value>;
 				break;
 			case Type::Null: [[likely]]
 			default: [[unlikely]]
@@ -330,129 +330,129 @@ namespace JSON
 	Value& Value::operator=(const bool value)
 	{
 		*this = Type::Boolean;
-		*boolean = value;
+		*ptrBoolean = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const int8_t value)
 	{
-		*this = Type::NumberInteger;
-		*number_i = value;
+		*this = Type::NumberI;
+		*ptrNumberI = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const int16_t value)
 	{
-		*this = Type::NumberInteger;
-		*number_i = value;
+		*this = Type::NumberI;
+		*ptrNumberI = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const int32_t value)
 	{
-		*this = Type::NumberInteger;
-		*number_i = value;
+		*this = Type::NumberI;
+		*ptrNumberI = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const int64_t value)
 	{
-		*this = Type::NumberInteger;
-		*number_i = value;
+		*this = Type::NumberI;
+		*ptrNumberI = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const uint8_t value)
 	{
-		*this = Type::NumberUInteger;
-		*number_u = value;
+		*this = Type::NumberU;
+		*ptrNumberU = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const uint16_t value)
 	{
-		*this = Type::NumberUInteger;
-		*number_u = value;
+		*this = Type::NumberU;
+		*ptrNumberU = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const uint32_t value)
 	{
-		*this = Type::NumberUInteger;
-		*number_u = value;
+		*this = Type::NumberU;
+		*ptrNumberU = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const uint64_t value)
 	{
-		*this = Type::NumberUInteger;
-		*number_u = value;
+		*this = Type::NumberU;
+		*ptrNumberU = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const float value)
 	{
-		*this = Type::NumberFloat;
-		*number_f = value;
+		*this = Type::NumberF;
+		*ptrNumberF = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const double value)
 	{
-		*this = Type::NumberFloat;
-		*number_f = value;
+		*this = Type::NumberF;
+		*ptrNumberF = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const long double value)
 	{
-		*this = Type::NumberFloat;
-		*number_f = value;
+		*this = Type::NumberF;
+		*ptrNumberF = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const char* value)
 	{
 		*this = Type::String;
-		*string = value;
+		*ptrString = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const std::string& value)
 	{
 		*this = Type::String;
-		*string = value;
+		*ptrString = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const wchar_t* value)
 	{
 		*this = Type::String;
-		utf16ToUtf8(*string, std::wstring(value));
+		utf16ToUtf8(*ptrString, std::wstring(value));
 		return *this;
 	}
 
 	Value& Value::operator=(const std::wstring& value)
 	{
 		*this = Type::String;
-		utf16ToUtf8(*string, value);
+		utf16ToUtf8(*ptrString, value);
 		return *this;
 	}
 
 	Value& Value::operator=(const std::vector<Value>& value)
 	{
 		*this = Type::Array;
-		*array = value;
+		*ptrArray = value;
 		return *this;
 	}
 
 	Value& Value::operator=(const std::unordered_map<std::string, Value>& value)
 	{
 		*this = Type::Object;
-		object->reserve(value.size());
+		ptrObject->reserve(value.size());
 		for (auto& pair : value)
 		{
-			(*object)[pair.first] = pair.second;
+			(*ptrObject)[pair.first] = pair.second;
 		}
 		return *this;
 	}
@@ -460,7 +460,7 @@ namespace JSON
 	Value& Value::operator=(const std::unordered_map<Field, Value>& value)
 	{
 		*this = Type::Object;
-		*object = value;
+		*ptrObject = value;
 		return *this;
 	}
 
@@ -476,51 +476,51 @@ namespace JSON
 		case Type::Null:
 			return type == other.type;
 		case Type::Boolean:
-			return type == other.type && *boolean == *other.boolean;
-		case Type::NumberInteger:
+			return type == other.type && *ptrBoolean == *other.ptrBoolean;
+		case Type::NumberI:
 			switch (other.type)
 			{
-			case Type::NumberInteger:
-				return *number_i == *other.number_i;
-			case Type::NumberUInteger:
-				if (*number_i < 0) return false;
-				return *number_i == *other.number_i;
-			case Type::NumberFloat:
-				return *number_i == *other.number_f;
+			case Type::NumberI:
+				return *ptrNumberI == *other.ptrNumberI;
+			case Type::NumberU:
+				if (*ptrNumberI < 0) return false;
+				return *ptrNumberI == *other.ptrNumberI;
+			case Type::NumberF:
+				return *ptrNumberI == *other.ptrNumberF;
 			default:
 				return false;
 			}
-		case Type::NumberUInteger:
+		case Type::NumberU:
 			switch (other.type)
 			{
-			case Type::NumberInteger:
-				if (*other.number_i < 0) return false;
-				return *number_u == *other.number_u;
-			case Type::NumberUInteger:
-				return *number_u == *other.number_u;
-			case Type::NumberFloat:
-				return *number_u == *other.number_f;
+			case Type::NumberI:
+				if (*other.ptrNumberI < 0) return false;
+				return *ptrNumberU == *other.ptrNumberU;
+			case Type::NumberU:
+				return *ptrNumberU == *other.ptrNumberU;
+			case Type::NumberF:
+				return *ptrNumberU == *other.ptrNumberU;
 			default:
 				return false;
 			}
-		case Type::NumberFloat:
+		case Type::NumberF:
 			switch (other.type)
 			{
-			case Type::NumberInteger:
-				return *number_f == *other.number_i;
-			case Type::NumberUInteger:
-				return *number_f == *other.number_u;
-			case Type::NumberFloat:
-				return *number_f == *other.number_f;
+			case Type::NumberI:
+				return *ptrNumberF == *other.ptrNumberI;
+			case Type::NumberU:
+				return *ptrNumberF == *other.ptrNumberU;
+			case Type::NumberF:
+				return *ptrNumberF == *other.ptrNumberF;
 			default:
 				return false;
 			}
 		case Type::String:
-			return type == other.type && *string == *other.string;
+			return type == other.type && *ptrString == *other.ptrString;
 		case Type::Array:
-			return type == other.type && *array == *other.array;
+			return type == other.type && *ptrArray == *other.ptrArray;
 		case Type::Object:
-			return type == other.type && *object == *other.object;
+			return type == other.type && *ptrObject == *other.ptrObject;
 		default:
 			return false;
 		}
@@ -531,42 +531,42 @@ namespace JSON
 		return !(*this == right);
 	}
 
-	Value Value::Null()
+	Value Value::createNull()
 	{
 		return Value(Type::Null);
 	}
 
-	Value Value::Boolean()
+	Value Value::createBoolean()
 	{
 		return Value(Type::Boolean);
 	}
 
-	Value Value::NumberInteger()
+	Value Value::createNumberI()
 	{
-		return Value(Type::NumberInteger);
+		return Value(Type::NumberI);
 	}
 
-	Value Value::NumberUInteger()
+	Value Value::createNumberU()
 	{
-		return Value(Type::NumberUInteger);
+		return Value(Type::NumberU);
 	}
 
-	Value Value::NumberFloat()
+	Value Value::createNumberF()
 	{
-		return Value(Type::NumberFloat);
+		return Value(Type::NumberF);
 	}
 
-	Value Value::String()
+	Value Value::createString()
 	{
 		return Value(Type::String);
 	}
 
-	Value Value::Array()
+	Value Value::createArray()
 	{
 		return Value(Type::Array);
 	}
 
-	Value Value::Object()
+	Value Value::createObject()
 	{
 		return Value(Type::Object);
 	}
@@ -576,25 +576,25 @@ namespace JSON
 		switch (other.type)
 		{
 		case Type::Boolean:
-			boolean = { new bool(*other.boolean) };
+			ptrBoolean = { new bool(*other.ptrBoolean) };
 			break;
-		case Type::NumberInteger:
-			number_i = { new int64_t(*other.number_i) };
+		case Type::NumberI:
+			ptrNumberI = { new int64_t(*other.ptrNumberI) };
 			break;
-		case Type::NumberUInteger:
-			number_u = { new uint64_t(*other.number_u) };
+		case Type::NumberU:
+			ptrNumberU = { new uint64_t(*other.ptrNumberU) };
 			break;
-		case Type::NumberFloat:
-			number_f = { new long double(*other.number_f) };
+		case Type::NumberF:
+			ptrNumberF = { new long double(*other.ptrNumberF) };
 			break;
 		case Type::String:
-			string = { new std::string(*other.string) };
+			ptrString = { new std::string(*other.ptrString) };
 			break;
 		case Type::Array:
-			array = { new std::vector<Value>(*other.array) };
+			ptrArray = { new std::vector<Value>(*other.ptrArray) };
 			break;
 		case Type::Object:
-			object = { new std::unordered_map<Field, Value>(*other.object) };
+			ptrObject = { new std::unordered_map<Field, Value>(*other.ptrObject) };
 			break;
 		case Type::Null:
 		default:
@@ -608,25 +608,25 @@ namespace JSON
 		switch (type)
 		{
 		case Type::Boolean:
-			delete boolean;
+			delete ptrBoolean;
 			break;
-		case Type::NumberInteger:
-			delete number_i;
+		case Type::NumberI:
+			delete ptrNumberI;
 			break;
-		case Type::NumberUInteger:
-			delete number_u;
+		case Type::NumberU:
+			delete ptrNumberU;
 			break;
-		case Type::NumberFloat:
-			delete number_f;
+		case Type::NumberF:
+			delete ptrNumberF;
 			break;
 		case Type::String:
-			delete string;
+			delete ptrString;
 			break;
 		case Type::Array:
-			delete array;
+			delete ptrArray;
 			break;
 		case Type::Object:
-			delete object;
+			delete ptrObject;
 			break;
 		case Type::Null:
 		default:
@@ -649,25 +649,25 @@ namespace JSON
 			break;
 		}
 		case Type::Boolean:
-			serializeValue(stream, value->boolean, options);
+			serializeValue(stream, value->ptrBoolean, options);
 			break;
-		case Type::NumberInteger:
-			serializeValue(stream, value->number_i, options);
+		case Type::NumberI:
+			serializeValue(stream, value->ptrNumberI, options);
 			break;
-		case Type::NumberUInteger:
-			serializeValue(stream, value->number_u, options);
+		case Type::NumberU:
+			serializeValue(stream, value->ptrNumberU, options);
 			break;
-		case Type::NumberFloat:
-			serializeValue(stream, value->number_f, options);
+		case Type::NumberF:
+			serializeValue(stream, value->ptrNumberF, options);
 			break;
 		case Type::String:
-			serializeValue(stream, value->string, options);
+			serializeValue(stream, value->ptrString, options);
 			break;
 		case Type::Array:
-			serializeValue(stream, value->array, options);
+			serializeValue(stream, value->ptrArray, options);
 			break;
 		case Type::Object:
-			serializeValue(stream, value->object, options);
+			serializeValue(stream, value->ptrObject, options);
 			break;
 		default: [[unlikely]]
 			throw std::runtime_error("json_serialize_value_badtype");
@@ -869,7 +869,7 @@ namespace JSON
 			if (value) [[likely]]
 			{
 				*value = Type::Boolean;
-				deserializeValue(stream, value->boolean, options);
+				deserializeValue(stream, value->ptrBoolean, options);
 			}
 			else [[unlikely]]
 			{
@@ -880,7 +880,7 @@ namespace JSON
 			if (value) [[likely]]
 			{
 				*value = Type::String;
-				deserializeValue(stream, value->string, options);
+				deserializeValue(stream, value->ptrString, options);
 			}
 			else [[unlikely]]
 			{
@@ -891,7 +891,7 @@ namespace JSON
 			if (value) [[likely]]
 			{
 				*value = Type::Array;
-				deserializeValue(stream, value->array, options);
+				deserializeValue(stream, value->ptrArray, options);
 			}
 			else [[unlikely]]
 			{
@@ -902,7 +902,7 @@ namespace JSON
 			if (value) [[likely]]
 			{
 				*value = Type::Object;
-				deserializeValue(stream, value->object, options);
+				deserializeValue(stream, value->ptrObject, options);
 			}
 			else [[unlikely]]
 			{
@@ -916,8 +916,8 @@ namespace JSON
 				deserializeValueNumberAsString(stream, &numberStr, options);
 				if (numberStr.find('.') != std::string::npos) [[unlikely]]
 				{
-					*value = Type::NumberFloat;
-					*value->number_f = std::stold(numberStr);
+					*value = Type::NumberF;
+					*value->ptrNumberF = std::stold(numberStr);
 				}
 				else [[likely]]
 				{
@@ -925,19 +925,19 @@ namespace JSON
 					{
 						if (numberStr[0] == '-') [[unlikely]]
 						{
-							*value = Type::NumberInteger;
-							*value->number_i = std::stoll(numberStr);
+							*value = Type::NumberI;
+							*value->ptrNumberI = std::stoll(numberStr);
 						}
 						else [[likely]]
 						{
-							*value = Type::NumberUInteger;
-							*value->number_u = std::stoull(numberStr);
+							*value = Type::NumberU;
+							*value->ptrNumberU = std::stoull(numberStr);
 						}
 					}
 					catch (const std::out_of_range&)
 					{
-						*value = Type::NumberFloat;
-						*value->number_f = std::stold(numberStr);
+						*value = Type::NumberF;
+						*value->ptrNumberF = std::stold(numberStr);
 					}
 				}
 			}
@@ -1455,7 +1455,7 @@ namespace JSON
 	{
 		if (value == Type::Boolean) [[likely]]
 		{
-			*boolean = (*value.boolean);
+			*boolean = (*value.ptrBoolean);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_boolean_badtype");
@@ -1463,14 +1463,14 @@ namespace JSON
 
 	void deserializeValue(const Value& value, int8_t* number)
 	{
-		if (value == Type::NumberInteger) [[likely]]
+		if (value == Type::NumberI) [[likely]]
 		{
-			*number = static_cast<int8_t>(*value.number_i);
+			*number = static_cast<int8_t>(*value.ptrNumberI);
 			return;
 		}
-		else if (value == Type::NumberUInteger) [[unlikely]]
+		else if (value == Type::NumberU) [[unlikely]]
 		{
-			*number = static_cast<int8_t>(*value.number_u);
+			*number = static_cast<int8_t>(*value.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_int8_badtype");
@@ -1478,14 +1478,14 @@ namespace JSON
 
 	void deserializeValue(const Value& value, int16_t* number)
 	{
-		if (value == Type::NumberInteger) [[likely]]
+		if (value == Type::NumberI) [[likely]]
 		{
-			*number = static_cast<int16_t>(*value.number_i);
+			*number = static_cast<int16_t>(*value.ptrNumberI);
 			return;
 		}
-		else if (value == Type::NumberUInteger) [[unlikely]]
+		else if (value == Type::NumberU) [[unlikely]]
 		{
-			*number = static_cast<int16_t>(*value.number_u);
+			*number = static_cast<int16_t>(*value.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_int16_badtype");
@@ -1493,14 +1493,14 @@ namespace JSON
 
 	void deserializeValue(const Value& value, int32_t* number)
 	{
-		if (value == Type::NumberInteger) [[likely]]
+		if (value == Type::NumberI) [[likely]]
 		{
-			*number = static_cast<int32_t>(*value.number_i);
+			*number = static_cast<int32_t>(*value.ptrNumberI);
 			return;
 		}
-		else if (value == Type::NumberUInteger) [[unlikely]]
+		else if (value == Type::NumberU) [[unlikely]]
 		{
-			*number = static_cast<int32_t>(*value.number_u);
+			*number = static_cast<int32_t>(*value.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_int32_badtype");
@@ -1508,14 +1508,14 @@ namespace JSON
 
 	void deserializeValue(const Value& value, int64_t* number)
 	{
-		if (value == Type::NumberInteger) [[likely]]
+		if (value == Type::NumberI) [[likely]]
 		{
-			*number = static_cast<int64_t>(*value.number_i);
+			*number = static_cast<int64_t>(*value.ptrNumberI);
 			return;
 		}
-		else if (value == Type::NumberUInteger) [[unlikely]]
+		else if (value == Type::NumberU) [[unlikely]]
 		{
-			*number = static_cast<int64_t>(*value.number_u);
+			*number = static_cast<int64_t>(*value.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_int64_badtype");
@@ -1523,9 +1523,9 @@ namespace JSON
 
 	void deserializeValue(const Value& value, uint8_t* number)
 	{
-		if (value == Type::NumberUInteger) [[likely]]
+		if (value == Type::NumberU) [[likely]]
 		{
-			*number = static_cast<uint8_t>(*value.number_u);
+			*number = static_cast<uint8_t>(*value.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_uint8_badtype");
@@ -1533,9 +1533,9 @@ namespace JSON
 
 	void deserializeValue(const Value& value, uint16_t* number)
 	{
-		if (value == Type::NumberUInteger) [[likely]]
+		if (value == Type::NumberU) [[likely]]
 		{
-			*number = static_cast<uint16_t>(*value.number_u);
+			*number = static_cast<uint16_t>(*value.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_uint16_badtype");
@@ -1543,9 +1543,9 @@ namespace JSON
 
 	void deserializeValue(const Value& value, uint32_t* number)
 	{
-		if (value == Type::NumberUInteger) [[likely]]
+		if (value == Type::NumberU) [[likely]]
 		{
-			*number = static_cast<uint32_t>(*value.number_u);
+			*number = static_cast<uint32_t>(*value.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_uint32_badtype");
@@ -1553,9 +1553,9 @@ namespace JSON
 
 	void deserializeValue(const Value& value, uint64_t* number)
 	{
-		if (value == Type::NumberUInteger) [[likely]]
+		if (value == Type::NumberU) [[likely]]
 		{
-			*number = static_cast<uint64_t>(*value.number_u);
+			*number = static_cast<uint64_t>(*value.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_uint64_badtype");
@@ -1563,9 +1563,9 @@ namespace JSON
 
 	void deserializeValue(const Value& value, float* number)
 	{
-		if (value == Type::NumberFloat) [[likely]]
+		if (value == Type::NumberF) [[likely]]
 		{
-			*number = (float)(*value.number_f);
+			*number = (float)(*value.ptrNumberF);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_float_badtype");
@@ -1573,9 +1573,9 @@ namespace JSON
 
 	void deserializeValue(const Value& value, double* number)
 	{
-		if (value == Type::NumberFloat) [[likely]]
+		if (value == Type::NumberF) [[likely]]
 		{
-			*number = (double)(*value.number_f);
+			*number = (double)(*value.ptrNumberF);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_double_badtype");
@@ -1583,9 +1583,9 @@ namespace JSON
 
 	void deserializeValue(const Value& value, long double* number)
 	{
-		if (value == Type::NumberFloat) [[likely]]
+		if (value == Type::NumberF) [[likely]]
 		{
-			*number = (*value.number_f);
+			*number = (*value.ptrNumberF);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_longdouble_badtype");
@@ -1595,7 +1595,7 @@ namespace JSON
 	{
 		if (value == Type::String) [[likely]]
 		{
-			*string = *value.string;
+			*string = *value.ptrString;
 			return;
 		}
 		throw std::runtime_error("json_deserialize_string_badtype");
@@ -1605,7 +1605,7 @@ namespace JSON
 	{
 		if (value == Type::String) [[likely]]
 		{
-			utf8ToUtf16(*string, *value.string);
+			utf8ToUtf16(*string, *value.ptrString);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_string_badtype");

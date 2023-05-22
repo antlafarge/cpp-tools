@@ -115,14 +115,14 @@ namespace JSON
 {
 	enum class Type
 	{
-		Null,
-		Boolean,
-		NumberInteger,
-		NumberUInteger,
-		NumberFloat,
-		String,
-		Array,
-		Object
+		Null, // Null
+		Boolean, // Bool
+		NumberI, // int64_t
+		NumberU, // uint64_t
+		NumberF, // long double
+		String, // std::string
+		Array, // std::vector<Value>
+		Object // std::unordered_map<Field, Value>
 	};
 
 	struct Options
@@ -210,14 +210,65 @@ namespace JSON
 		union
 		{
 			void* ptr = nullptr;
-			bool* boolean;
-			int64_t* number_i;
-			uint64_t* number_u;
-			long double* number_f;
-			std::string* string;
-			std::vector<Value>* array;
-			std::unordered_map<Field, Value>* object;
+			bool* ptrBoolean;
+			int64_t* ptrNumberI;
+			uint64_t* ptrNumberU;
+			long double* ptrNumberF;
+			std::string* ptrString;
+			std::vector<Value>* ptrArray;
+			std::unordered_map<Field, Value>* ptrObject;
 		};
+
+		static Value createNull();
+
+		static Value createBoolean();
+
+		static Value createNumberI();
+
+		static Value createNumberU();
+
+		static Value createNumberF();
+
+		static Value createString();
+
+		static Value createArray();
+
+		static Value createObject();
+
+		inline bool& getBoolean()
+		{
+			return *ptrBoolean;
+		}
+
+		inline int64_t& getNumberI()
+		{
+			return *ptrNumberI;
+		}
+
+		inline uint64_t& getNumberU()
+		{
+			return *ptrNumberU;
+		}
+
+		inline long double& getNumberF()
+		{
+			return *ptrNumberF;
+		}
+
+		inline std::string& getString()
+		{
+			return *ptrString;
+		}
+
+		inline std::vector<Value>& getArray()
+		{
+			return *ptrArray;
+		}
+
+		inline std::unordered_map<Field, Value>& getObject()
+		{
+			return *ptrObject;
+		}
 
 		Value() = default;
 
@@ -316,22 +367,6 @@ namespace JSON
 		bool operator==(const Value& other) const;
 
 		bool operator!=(const Value& right) const;
-
-		static Value Null();
-
-		static Value Boolean();
-
-		static Value NumberInteger();
-
-		static Value NumberUInteger();
-
-		static Value NumberFloat();
-
-		static Value String();
-
-		static Value Array();
-
-		static Value Object();
 
 	protected:
 

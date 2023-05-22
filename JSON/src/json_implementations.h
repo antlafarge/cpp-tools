@@ -331,8 +331,8 @@ namespace JSON
 		{
 			throw std::runtime_error("json_deserialize_notanobject");
 		}
-		auto it = value.object->find(fieldValue.field.name);
-		if (it != value.object->end()) [[likely]]
+		auto it = value.ptrObject->find(fieldValue.field.name);
+		if (it != value.ptrObject->end()) [[likely]]
 		{
 			deserializeValue(it->second, &fieldValue.value);
 		}
@@ -778,7 +778,7 @@ namespace JSON
 		if (value == Type::Array) [[likely]]
 		{
 			std::size_t index = 0;
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				auto& value2 = (*container)[index];
 				deserializeValue(item, &value2);
@@ -794,9 +794,9 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			container->resize(value.array->size());
+			container->resize(value.ptrArray->size());
 			std::size_t index = 0;
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				auto& value2 = (*container)[index];
 				deserializeValue(item, &value2);
@@ -812,9 +812,9 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			container->resize(value.array->size());
+			container->resize(value.ptrArray->size());
 			std::size_t index = 0;
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				auto& value2 = (*container)[index];
 				deserializeValue(item, &value2);
@@ -830,9 +830,9 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			container->resize(value.array->size());
+			container->resize(value.ptrArray->size());
 			auto it = container->begin();
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				auto& value2 = *it;
 				deserializeValue(item, &value2);
@@ -848,9 +848,9 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			container->resize(value.array->size());
+			container->resize(value.ptrArray->size());
 			auto it = container->begin();
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				auto& value2 = *it;
 				deserializeValue(item, &value2);
@@ -866,7 +866,7 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				TValue value2;
 				deserializeValue(item, &value2);
@@ -882,7 +882,7 @@ namespace JSON
 	{
 		if (value == Type::Object) [[likely]]
 		{
-			for (auto& pair : *value.object)
+			for (auto& pair : *value.ptrObject)
 			{
 				auto& value2 = (*container)[pair.first];
 				deserializeValue(pair.second, &value2);
@@ -897,7 +897,7 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				TValue value2;
 				deserializeValue(item, &value2);
@@ -913,7 +913,7 @@ namespace JSON
 	{
 		if (value == Type::Object) [[likely]]
 		{
-			for (auto& pair : *value.object)
+			for (auto& pair : *value.ptrObject)
 			{
 				TValue value2;
 				deserializeValue(pair.second, &value2);
@@ -929,7 +929,7 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				TValue value2;
 				deserializeValue(item, &value2);
@@ -945,7 +945,7 @@ namespace JSON
 	{
 		if (value == Type::Object) [[likely]]
 		{
-			for (auto& pair : *value.object)
+			for (auto& pair : *value.ptrObject)
 			{
 				auto& value2 = (*container)[pair.first];
 				deserializeValue(pair.second, &value2);
@@ -960,7 +960,7 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				TValue value2;
 				deserializeValue(item, &value2);
@@ -976,7 +976,7 @@ namespace JSON
 	{
 		if (value == Type::Object) [[likely]]
 		{
-			for (auto& pair : *value.object)
+			for (auto& pair : *value.ptrObject)
 			{
 				TValue value2;
 				deserializeValue(pair.second, &value2);
@@ -992,7 +992,7 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				TValue value2;
 				deserializeValue(item, &value2);
@@ -1008,7 +1008,7 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				TValue value2;
 				deserializeValue(item, &value2);
@@ -1024,7 +1024,7 @@ namespace JSON
 	{
 		if (value == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.array)
+			for (auto& item : *value.ptrArray)
 			{
 				TValue value2;
 				deserializeValue(item, &value2);
