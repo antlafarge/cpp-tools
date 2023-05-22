@@ -35,6 +35,7 @@ You should use the types declared in [cstdint](https://en.cppreference.com/w/cpp
 ```cpp
 Sample object{ {}, { true }, 3.1415926535, "Haste makes waste", { 0,1,1,2,3,5,8,13,21,34 } };
 std::string json = JSON::serialize(object);
+std::cout << json << std::endl; // {"NullField":null,"WorkingField":true,"PiField":3.1415926535000001,"ProverbField":"Haste makes waste","FibonacciField":[0,1,1,2,3,5,8,13,21,34]}
 ```
 
 Expected JSON output (formatted for display) :
@@ -95,6 +96,7 @@ void testCustomDeSerializationFunctions()
 {
 	std::bitset<2> bs{ 0xA };
 	std::string json = JSON::serialize(bs);
+	std::cout << json << std::endl; // "10"
 
 	std::bitset<2> bs2;
 	JSON::deserialize(json, bs2);
@@ -109,13 +111,13 @@ void testCustomDeSerializationFunctions()
 #include <fstream>
 #include "json.h"
 
-std::map<std::string, std::string> data{ { "Field", "Value" } };
-
 // Write to file
+std::map<std::string, std::string> data { { "Field", "Value" } };
 JSON::serialize(std::ofstream("data.json"), data);
 
 // Read from file
-JSON::deserialize(std::ifstream("data.json"), data);
+std::map<std::string, std::string> data2;
+JSON::deserialize(std::ifstream("data.json"), data2);
 ```
 
 # Not typed (de)serialization
