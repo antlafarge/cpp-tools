@@ -707,6 +707,29 @@ namespace JSON
 		utf8ToUtf16(stream, src, dstEncoding);
 		dst = stream.str();
 	}
+	
+	void writeBOM(std::ostream& stream, Encoding encoding)
+	{
+	#if defined(JSON_DEFAULT_WRITE_UTF8_BOM) && JSON_DEFAULT_WRITE_UTF8_BOM != 0
+		if ((encoding & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+		{
+			stream << uint8_t(0xEF) << uint8_t(0xBB) << uint8_t(0xBF);
+		}
+	#endif
+	#if defined(JSON_DEFAULT_WRITE_UTF16_BOM) && JSON_DEFAULT_WRITE_UTF16_BOM != 0
+		if ((encoding & Encoding::UTF16) == Encoding::UTF16) [[unlikely]]
+		{
+			if ((encoding & Encoding::LittleEndian) == Encoding::LittleEndian) [[unlikely]]
+			{
+				stream << uint8_t(0xFF) << uint8_t(0xFE);
+			}
+			else [[likely]]
+			{
+				stream << uint8_t(0xFE) << uint8_t(0xFF);
+			}
+		}
+	#endif
+	}
 }
 
 #pragma GCC diagnostic pop

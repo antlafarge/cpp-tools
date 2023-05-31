@@ -82,4 +82,6 @@ namespace JSON
 	void utf8ToUtf16(std::ostream& dst, const std::string& src, Encoding dstEncoding = Encoding::UTF16 | Encoding::BigEndian);
 
 	void utf8ToUtf16(std::string& dst, const std::string& src, Encoding dstEncoding = Encoding::UTF16 | Encoding::BigEndian);
+
+	void writeBOM(std::ostream& stream, Encoding encoding);
 }
