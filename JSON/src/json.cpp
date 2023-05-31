@@ -769,19 +769,27 @@ namespace JSON
 			options.encoding = JSON_DEFAULT_ENCODING;
 		}
 
-			if ((options & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+		serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
+		if ((options & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+		{
+			stream << *value;
+		}
+		else [[unlikely]]
+		{
+			std::istringstream stream2(*value);
+			int32_t codePoint = 0;
+			Encoding encoding = Encoding::UTF8;
+			while (true)
 			{
-				stream << '"' << *value << '"';
-			}
-			else [[unlikely]]
-			{
-				serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
-				for (char c : *value)
+				JSON_READ_CHAR(stream2, codePoint, encoding);
+				if (codePoint == EOF)
 				{
-					serializeUnicodeChar(stream, codePointToUnicode(c, options), options);
+					break;
 				}
-				serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
+				serializeUnicodeChar(stream, codePointToUnicode(codePoint, options), options);
 			}
+		}
+		serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
 	}
 
 	void serializeValue(std::ostream& stream, const std::wstring* value, Options& options)
@@ -791,31 +799,29 @@ namespace JSON
 			options.encoding = JSON_DEFAULT_ENCODING;
 		}
 
-			if ((options & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+		serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
+		if ((options & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+		{
+			utf16ToUtf8(stream, *value);
+		}
+		else [[unlikely]]
+		{
+			std::stringstream stream2;
+			utf16ToUtf8(stream2, *value);
+			stream2.seekg(0, stream2.beg);
+			int32_t codePoint = 0;
+			Encoding encoding = Encoding::UTF8;
+			while (true)
 			{
-				stream << '"';
-				utf16ToUtf8(stream, *value);
-				stream << '"';
-			}
-			else [[unlikely]]
-			{
-				serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
-				std::ostringstream stream2;
-				utf16ToUtf8(stream2, *value);
-				std::istringstream stream3(stream2.str());
-				Encoding encoding = Encoding::UTF8;
-				while (true)
+				JSON_READ_CHAR(stream2, codePoint, encoding);
+				if (codePoint == EOF)
 				{
-					int32_t codePoint = 0;
-					JSON_READ_CHAR(stream3, codePoint, encoding);
-					if (codePoint == EOF)
-					{
-						break;
-					}
-					serializeUnicodeChar(stream, codePointToUnicode(codePoint, options), options);
+					break;
 				}
-				serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
+				serializeUnicodeChar(stream, codePointToUnicode(codePoint, options), options);
 			}
+		}
+		serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
 	}
 
 #pragma endregion

@@ -232,9 +232,9 @@ struct BasicData
 		bool b7 = uint16 == other.uint16;
 		bool b8 = uint32 == other.uint32;
 		bool b9 = uint64 == other.uint64;
-		bool b10 = myFloat == other.myFloat;
-		bool b11 = myDouble == other.myDouble;
-		bool b12 = myLongDouble == other.myLongDouble;
+		bool b10 = fabs(myFloat - other.myFloat) < 0.01f;
+		bool b11 = abs(myDouble - other.myDouble) < 0.0001;
+		bool b12 = fabsl(myLongDouble - other.myLongDouble) < 0.000001L;
 		bool b13 = string == other.string;
 		bool b14 = wstring == other.wstring;
 		return (b1 && b2 && b3 && b4 && b5 && b6 && b7 && b8 && b9 && b10 && b11 && b12 && b13 && b14);
@@ -251,9 +251,9 @@ struct BasicData
 		"uint16", uint16,
 		"uint32", uint32,
 		"uint64", uint64,
-		JSON::Field("myFloat", 2), myFloat,
-		JSON::Field("myDouble", 4), myDouble,
-		JSON::Field("myLongDouble", 6), myLongDouble,
+		JSON::Field("myFloat", 3), myFloat,
+		JSON::Field("myDouble", 5), myDouble,
+		JSON::Field("myLongDouble", 7), myLongDouble,
 		"string", string,
 		"wstring", wstring
 	);
@@ -385,7 +385,7 @@ void testUnicode(int32_t codePoint)
 	{
 		int32_t unicode = JSON::codePointToUtf8(codePoint);
 		std::string bytesStr;
-		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF8, true);
+		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF8);
 		std::cout << "UTF-8 :\t\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
 		int32_t codePoint2 = JSON::utf8ToCodePoint(unicode);
 		assert(codePoint == codePoint2);
@@ -394,7 +394,7 @@ void testUnicode(int32_t codePoint)
 	{
 		int32_t unicode = JSON::codePointToUtf16(codePoint, JSON::Encoding::BigEndian);
 		std::string bytesStr;
-		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF16 | JSON::Encoding::BigEndian, true);
+		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF16 | JSON::Encoding::BigEndian);
 		std::cout << "UTF-16BE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
 		int32_t codePoint2 = JSON::utf16ToCodePoint(unicode, JSON::Encoding::BigEndian);
 		assert(codePoint == codePoint2);
@@ -403,7 +403,7 @@ void testUnicode(int32_t codePoint)
 	{
 		int32_t unicode = JSON::codePointToUtf16(codePoint, JSON::Encoding::LittleEndian);
 		std::string bytesStr;
-		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian, true);
+		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian);
 		std::cout << "UTF-16LE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
 		int32_t codePoint2 = JSON::utf16ToCodePoint(unicode, JSON::Encoding::LittleEndian);
 		assert(codePoint == codePoint2);
@@ -412,7 +412,7 @@ void testUnicode(int32_t codePoint)
 	{
 		int32_t unicode = JSON::codePointToUtf32(codePoint, JSON::Encoding::BigEndian);
 		std::string bytesStr;
-		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF32 | JSON::Encoding::BigEndian, true);
+		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF32 | JSON::Encoding::BigEndian);
 		std::cout << "UTF-32BE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
 		int32_t codePoint2 = JSON::utf32ToCodePoint(unicode, JSON::Encoding::BigEndian);
 		assert(codePoint == codePoint2);
@@ -421,7 +421,7 @@ void testUnicode(int32_t codePoint)
 	{
 		int32_t unicode = JSON::codePointToUtf32(codePoint, JSON::Encoding::LittleEndian);
 		std::string bytesStr;
-		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF32 | JSON::Encoding::LittleEndian, true);
+		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF32 | JSON::Encoding::LittleEndian);
 		std::cout << "UTF-32LE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
 		int32_t codePoint2 = JSON::utf32ToCodePoint(unicode, JSON::Encoding::LittleEndian);
 		assert(codePoint == codePoint2);
@@ -459,12 +459,12 @@ struct TestJsonUtf16LE
 };
 
 template<class T>
-void test(const std::string& sourceFileName, const std::string& targetFileName)
+void test(const std::string& sourceFileName, const std::string& targetFileName, JSON::Encoding writeEncoding = JSON::Encoding::None)
 {
 	std::cout << sourceFileName << " => " << targetFileName << std::endl;
 	T object;
 	JSON::deserialize(std::ifstream(sourceFileName), object);
-	JSON::serialize(std::ofstream(targetFileName), object);
+	JSON::serialize(std::ofstream(targetFileName), object, writeEncoding);
 	bool valid = JSON::isValid(std::ifstream(targetFileName));
 	std::cout << (valid ? "PASSED" : "FAILED") << std::endl
 		<< std::endl;
@@ -733,10 +733,10 @@ int main()
 	std::string catUtf8;
 	catUtf8.resize(6, 0);
 	catUtf8[0] = '"';
-	catUtf8[1] = (uint8_t)0xF0;
-	catUtf8[2] = (uint8_t)0x9F;
-	catUtf8[3] = (uint8_t)0x90;
-	catUtf8[4] = (uint8_t)0x88;
+	catUtf8[1] = 0xF0ui8;
+	catUtf8[2] = 0x9Fui8;
+	catUtf8[3] = 0x90ui8;
+	catUtf8[4] = 0x88ui8;
 	catUtf8[5] = '"';
 
 	{
@@ -744,10 +744,10 @@ int main()
 		std::string str;
 		str.resize(6, 0);
 		str[0] = '"';
-		str[1] = (uint8_t)0xF0;
-		str[2] = (uint8_t)0x9F;
-		str[3] = (uint8_t)0x90;
-		str[4] = (uint8_t)0x88;
+		str[1] = 0xF0ui8;
+		str[2] = 0x9Fui8;
+		str[3] = 0x90ui8;
+		str[4] = 0x88ui8;
 		str[5] = '"';
 		JSON::Value value;
 		JSON::deserialize(str, value);
@@ -759,14 +759,14 @@ int main()
 		// UTF16BE
 		std::string str;
 		str.resize(8, 0);
-		str[0] = (uint8_t)0x00;
-		str[1] = (uint8_t)0x22;
-		str[2] = (uint8_t)0xD8;
-		str[3] = (uint8_t)0x3D;
-		str[4] = (uint8_t)0xDC;
-		str[5] = (uint8_t)0x08;
-		str[6] = (uint8_t)0x00;
-		str[7] = (uint8_t)0x22;
+		str[0] = 0x00ui8;
+		str[1] = 0x22ui8;
+		str[2] = 0xD8ui8;
+		str[3] = 0x3Dui8;
+		str[4] = 0xDCui8;
+		str[5] = 0x08ui8;
+		str[6] = 0x00ui8;
+		str[7] = 0x22ui8;
 		JSON::Value value;
 		JSON::deserialize(str, value, JSON::Options(JSON::Encoding::UTF16 | JSON::Encoding::BigEndian));
 		auto json = JSON::serialize(value);
@@ -777,14 +777,14 @@ int main()
 		// UTF16LE
 		std::string str;
 		str.resize(8, 0);
-		str[0] = (uint8_t)0x22;
-		str[1] = (uint8_t)0x00;
-		str[2] = (uint8_t)0x3D;
-		str[3] = (uint8_t)0xD8;
-		str[4] = (uint8_t)0x08;
-		str[5] = (uint8_t)0xDC;
-		str[6] = (uint8_t)0x22;
-		str[7] = (uint8_t)0x00;
+		str[0] = 0x22ui8;
+		str[1] = 0x00ui8;
+		str[2] = 0x3Dui8;
+		str[3] = 0xD8ui8;
+		str[4] = 0x08ui8;
+		str[5] = 0xDCui8;
+		str[6] = 0x22ui8;
+		str[7] = 0x00ui8;
 		JSON::Value value;
 		JSON::deserialize(str, value, (JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian));
 		auto json = JSON::serialize(value);
@@ -795,18 +795,18 @@ int main()
 		// UTF32BE
 		std::string str;
 		str.resize(12, 0);
-		str[0] = (uint8_t)0x00;
-		str[1] = (uint8_t)0x00;
-		str[2] = (uint8_t)0x00;
-		str[3] = (uint8_t)0x22;
-		str[4] = (uint8_t)0x00;
-		str[5] = (uint8_t)0x01;
-		str[6] = (uint8_t)0xF4;
-		str[7] = (uint8_t)0x08;
-		str[8] = (uint8_t)0x00;
-		str[9] = (uint8_t)0x00;
-		str[10] = (uint8_t)0x00;
-		str[11] = (uint8_t)0x22;
+		str[0] = 0x00ui8;
+		str[1] = 0x00ui8;
+		str[2] = 0x00ui8;
+		str[3] = 0x22ui8;
+		str[4] = 0x00ui8;
+		str[5] = 0x01ui8;
+		str[6] = 0xF4ui8;
+		str[7] = 0x08ui8;
+		str[8] = 0x00ui8;
+		str[9] = 0x00ui8;
+		str[10] = 0x00ui8;
+		str[11] = 0x22ui8;
 		JSON::Value value;
 		JSON::deserialize(str, value, (JSON::Encoding::UTF32 | JSON::Encoding::BigEndian));
 		auto json = JSON::serialize(value);
@@ -817,18 +817,18 @@ int main()
 		// UTF32LE
 		std::string str;
 		str.resize(12, 0);
-		str[0] = (uint8_t)0x22;
-		str[1] = (uint8_t)0x00;
-		str[2] = (uint8_t)0x00;
-		str[3] = (uint8_t)0x00;
-		str[4] = (uint8_t)0x08;
-		str[5] = (uint8_t)0xF4;
-		str[6] = (uint8_t)0x01;
-		str[7] = (uint8_t)0x00;
-		str[8] = (uint8_t)0x22;
-		str[9] = (uint8_t)0x00;
-		str[10] = (uint8_t)0x00;
-		str[11] = (uint8_t)0x00;
+		str[0] = 0x22ui8;
+		str[1] = 0x00ui8;
+		str[2] = 0x00ui8;
+		str[3] = 0x00ui8;
+		str[4] = 0x08ui8;
+		str[5] = 0xF4ui8;
+		str[6] = 0x01ui8;
+		str[7] = 0x00ui8;
+		str[8] = 0x22ui8;
+		str[9] = 0x00ui8;
+		str[10] = 0x00ui8;
+		str[11] = 0x00ui8;
 		JSON::Value value;
 		JSON::deserialize(str, value, (JSON::Encoding::UTF32 | JSON::Encoding::LittleEndian));
 		auto json = JSON::serialize(value);
@@ -836,16 +836,16 @@ int main()
 	}
 
 	// JSON::Value testJsonUtf8(JSON::Encoding::UTF8);
-	test<TestJsonUtf8>("UTF8.json", "UTF8_2.json");
+	test<TestJsonUtf8>("UTF8.json", "UTF8_2.json", JSON::Encoding::UTF8);
 
 	// JSON::Value testJsonUtf8Bom(JSON::Encoding::UTF8);
-	test<TestJsonUtf8bom>("UTF8BOM.json", "UTF8BOM_2.json");
+	test<TestJsonUtf8bom>("UTF8BOM.json", "UTF8BOM_2.json", JSON::Encoding::UTF8);
 
 	// JSON::Value testJsonUtf16Be(JSON::Encoding::UTF16 | JSON::Encoding::BigEndian);
-	test<TestJsonUtf16BE>("UTF16BE.json", "UTF16BE_2.json");
+	test<TestJsonUtf16BE>("UTF16BE.json", "UTF16BE_2.json", (JSON::Encoding::UTF16 | JSON::Encoding::BigEndian));
 
 	// JSON::Value testJsonUtf16Le(JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian);
-	test<TestJsonUtf16LE>("UTF16LE.json", "UTF16LE_2.json");
+	test<TestJsonUtf16LE>("UTF16LE.json", "UTF16LE_2.json", (JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian));
 
 	std::cout << "ALL TESTS PASSED" << std::endl;
 

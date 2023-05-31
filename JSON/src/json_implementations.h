@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <limits>
 #include <sstream>
+#include <fstream>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
@@ -29,6 +30,32 @@ namespace JSON
 		std::ostringstream stream;
 		serialize(stream, value, options);
 		return stream.str();
+	}
+
+	template<class TValue>
+	void serialize(std::ofstream&& stream, const TValue& value, const Options& options)
+	{
+		std::ostream stream2(stream.rdbuf());
+#if defined(JSON_DEFAULT_WRITE_UTF8_BOM) && JSON_DEFAULT_WRITE_UTF8_BOM != 0
+		if ((options & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+		{
+			stream2 << 0xEFui8 << 0xBBui8 << 0xBFui8;
+		}
+#endif
+#if defined(JSON_DEFAULT_WRITE_UTF16_BOM) && JSON_DEFAULT_WRITE_UTF16_BOM != 0
+		if ((options & Encoding::UTF16) == Encoding::UTF16) [[unlikely]]
+		{
+			if ((options & Encoding::LittleEndian) == Encoding::LittleEndian) [[unlikely]]
+			{
+				stream2 << 0xFFui8 << 0xFEui8;
+			}
+			else [[likely]]
+			{
+				stream2 << 0xFEui8 << 0xFFui8;
+			}
+		}
+#endif
+		serialize(stream2, value, options);
 	}
 
 	template<class TValue>

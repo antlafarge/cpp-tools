@@ -495,12 +495,12 @@ namespace JSON
 		return size;
 	}
 
-	void serializeUnicodeChar(std::ostream& stream, int32_t unicode, Encoding encoding, bool debug)
+	void serializeUnicodeChar(std::ostream& stream, int32_t unicode, Encoding encoding)
 	{
-		if (debug)
-		{
-			stream << std::hex << std::uppercase << std::setfill('0');
-		}
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+		std::cout << std::hex << std::uppercase << std::setfill('0');
+#endif
+
 		uint8_t* byteArray = (uint8_t*)&unicode;
 		uint8_t byte = 0;
 		bool started = ((encoding & Encoding::UTF32) == Encoding::UTF32);
@@ -538,116 +538,99 @@ namespace JSON
 			}
 				if (started) [[unlikely]]
 				{
-					if (debug) [[unlikely]]
-					{
-						stream << std::setw(2) << static_cast<uint16_t>(byte) << ' ';
-					}
-					else [[likely]]
-					{
-						stream << byte;
-					}
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+					std::cout << std::setw(2) << static_cast<uint16_t>(byte) << ' ';
+#endif
+					stream << byte;
 				}
 		}
 	}
 
-	void serializeUnicodeChar(std::string& dst, int32_t codePoint, Encoding encoding, bool debug)
+	void serializeUnicodeChar(std::string& dst, int32_t codePoint, Encoding encoding)
 	{
 		std::ostringstream stream;
-		serializeUnicodeChar(stream, codePoint, encoding, debug);
+		serializeUnicodeChar(stream, codePoint, encoding);
 		dst += stream.str();
 	}
 
-	void serializeUnicodeChar(std::wostream& stream, int32_t unicode, Encoding encoding, bool debug)
+	void serializeUnicodeChar(std::wostream& stream, int32_t unicode, Encoding encoding)
 	{
-		if (debug) [[unlikely]]
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+		std::cout << std::hex << std::uppercase << std::setfill('0');
+#endif
+
+		if ((encoding & Encoding::UTF8) == Encoding::UTF8) [[unlikely]]
 		{
-			stream << std::hex << std::uppercase << std::setfill(L'0');
+			assert(false); // you should not store an UTF8 string in a wstring/wstream
+
+			uint8_t* byteArray = (uint8_t*)&unicode;
+			bool started = false;
+#if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
+			const int start = 0, end = 4, increment = 1;
+#else
+			const int start = 3, end = -1, increment = -1;
+#endif
+			for (int i = start; i != end; i += increment)
+			{
+				wchar_t wc = (wchar_t)byteArray[i];
+				if (wc || started || i == (end - increment)) [[unlikely]]
+				{
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+					std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
+					std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
+#endif
+					stream << wc;
+					started = true;
+				}
+			}
 		}
-
-			if ((encoding & Encoding::UTF8) == Encoding::UTF8) [[unlikely]]
-			{
-				assert(false); // you should not store an UTF8 string in a wstring/wstream
-
-				uint8_t* byteArray = (uint8_t*)&unicode;
-				bool started = false;
+		else if ((encoding & Encoding::UTF16) == Encoding::UTF16) [[likely]]
+		{
 #if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
-				const int start = 0, end = 4, increment = 1;
+			const int start = 0, end = 2, increment = 1;
 #else
-				const int start = 3, end = -1, increment = -1;
+			const int start = 1, end = -1, increment = -1;
 #endif
-				for (int i = start; i != end; i += increment)
+			for (int i = start; i != end; i += increment)
+			{
+				wchar_t wc = ((uint16_t*)&unicode)[i];
+
+				if (i == (end - increment) || wc) [[unlikely]]
 				{
-					wchar_t wc = (wchar_t)byteArray[i];
-					if (wc || started || i == (end - increment)) [[unlikely]]
-					{
-						if (debug) [[unlikely]]
-						{
-							stream << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
-							stream << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
-						}
-						else [[likely]]
-						{
-							stream << wc;
-						}
-						started = true;
-					}
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+					std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
+					std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
+#endif
+					stream << wc;
 				}
 			}
-			else if ((encoding & Encoding::UTF16) == Encoding::UTF16) [[likely]]
-			{
-#if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
-				const int start = 0, end = 2, increment = 1;
-#else
-				const int start = 1, end = -1, increment = -1;
-#endif
-				for (int i = start; i != end; i += increment)
-				{
-					wchar_t wc = ((uint16_t*)&unicode)[i];
-
-					if (i == (end - increment) || wc) [[unlikely]]
-					{
-						if (debug) [[unlikely]]
-						{
-							stream << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
-							stream << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
-						}
-						else [[likely]]
-						{
-							stream << wc;
-						}
-					}
-				}
-			}
-			else if ((encoding & Encoding::UTF32) == Encoding::UTF32) [[unlikely]]
-			{
-				assert(false); // you should not store an UTF32 string in a wstring/wstream
+		}
+		else if ((encoding & Encoding::UTF32) == Encoding::UTF32) [[unlikely]]
+		{
+			assert(false); // you should not store an UTF32 string in a wstring/wstream
 
 #if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
-				const int start = 0, end = 2, increment = 1;
+			const int start = 0, end = 2, increment = 1;
 #else
-				const int start = 1, end = -1, increment = -1;
+			const int start = 1, end = -1, increment = -1;
 #endif
-				for (int i = start; i != end; i += increment)
-				{
-					wchar_t wc = ((uint16_t*)&unicode)[i];
+			for (int i = start; i != end; i += increment)
+			{
+				wchar_t wc = ((uint16_t*)&unicode)[i];
 
-					if (debug) [[unlikely]]
-					{
-						stream << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
-						stream << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
-					}
-					else [[likely]]
-					{
-						stream << wc;
-					}
-				}
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+				std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
+				std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
+#endif
+				stream << wc;
 			}
+		}
 	}
 
-	void serializeUnicodeChar(std::wstring& dst, int32_t codePoint, Encoding encoding, bool debug)
+	void serializeUnicodeChar(std::wstring& dst, int32_t codePoint, Encoding encoding)
 	{
 		std::wostringstream stream;
-		serializeUnicodeChar(stream, codePoint, encoding, debug);
+		serializeUnicodeChar(stream, codePoint, encoding);
 		dst += stream.str();
 	}
 

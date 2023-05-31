@@ -3,9 +3,15 @@
 #include <cstdint>
 #include <iostream>
 
+#define JSON_DEBUG false
+
 #define JSON_DEFAULT_ENCODING JSON::Encoding::UTF8
 
 #define JSON_DEFAULT_ENCODING_WSTRING (Encoding::UTF16 | Encoding::BigEndian)
+
+#define JSON_DEFAULT_WRITE_UTF8_BOM false
+
+#define JSON_DEFAULT_WRITE_UTF16_BOM true
 
 #if ((defined(__BIG_ENDIAN__) && __BIG_ENDIAN__ == 1) || (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)) || ((defined(REG_DWORD) && (REG_DWORD == REG_DWORD_BIG_ENDIAN))))
 #	define JSON_PLATFORM_IS_BIG_ENDIAN 1
@@ -57,13 +63,13 @@ namespace JSON
 
 	int readCharNoSpaces(std::istream& stream, int32_t& codePoint, Encoding& encoding);
 
-	void serializeUnicodeChar(std::ostream& stream, int32_t unicode, Encoding encoding, bool debug = false);
+	void serializeUnicodeChar(std::ostream& stream, int32_t unicode, Encoding encoding);
 
-	void serializeUnicodeChar(std::string& dst, int32_t codePoint, Encoding encoding, bool debug = false);
+	void serializeUnicodeChar(std::string& dst, int32_t codePoint, Encoding encoding);
 
-	void serializeUnicodeChar(std::wostream& stream, int32_t unicode, Encoding encoding, bool debug = false);
+	void serializeUnicodeChar(std::wostream& stream, int32_t unicode, Encoding encoding);
 
-	void serializeUnicodeChar(std::wstring& dst, int32_t codePoint, Encoding encoding, bool debug = false);
+	void serializeUnicodeChar(std::wstring& dst, int32_t codePoint, Encoding encoding);
 
 	void utf16ToUtf8(std::ostream& dst, const std::wstring& src, Encoding srcEncoding = Encoding::UTF16 | Encoding::BigEndian);
 
