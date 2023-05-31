@@ -97,7 +97,7 @@ namespace JSON
 	template<class TInteger>
 	void serializeValueInteger(std::ostream& stream, const TInteger* value, Options& options)
 	{
-		if ((options & Encoding::UTF8) == Encoding::UTF8 || (options == Encoding::None && JSON_DEFAULT_ENCODING == Encoding::UTF8)) [[likely]]
+		if (options.hasFlags(Encoding::UTF8) || (options == Encoding::None && JSON_DEFAULT_ENCODING == Encoding::UTF8)) [[likely]]
 		{
 			stream << *value;
 		}
@@ -117,7 +117,7 @@ namespace JSON
 	void serializeValueFloat(std::ostream& stream, const TFloat* value, Options& options)
 	{
 		std::streamsize precision = (options.precision != -1 ? options.precision : std::numeric_limits<TFloat>::max_digits10);
-		if ((options & Encoding::UTF8) == Encoding::UTF8 || (options == Encoding::None && JSON_DEFAULT_ENCODING == Encoding::UTF8)) [[likely]]
+		if (options.hasFlags(Encoding::UTF8) || (options == Encoding::None && JSON_DEFAULT_ENCODING == Encoding::UTF8)) [[likely]]
 		{
 			stream << std::setprecision(precision) << *value;
 		}

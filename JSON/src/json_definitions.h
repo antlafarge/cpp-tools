@@ -154,6 +154,8 @@ namespace JSON
 		operator Encoding() const;
 
 		void merge(const Options& options);
+
+		bool hasFlags(Encoding flags) const;
 	};
 
 	struct Field

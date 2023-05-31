@@ -76,6 +76,11 @@ namespace JSON
 		precision = (precision == -1 && options.precision != -1 ? options.precision : precision);
 	}
 
+	bool Options::hasFlags(Encoding flags) const
+	{
+		return JSON::hasFlags(encoding, flags);
+	}
+
 	Field::Field(const char* fieldName, const Options& options)
 		: name(fieldName)
 		, options(options)
@@ -770,7 +775,7 @@ namespace JSON
 		}
 
 		serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
-		if ((options & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+		if (options.hasFlags(Encoding::UTF8)) [[likely]]
 		{
 			stream << *value;
 		}
@@ -800,7 +805,7 @@ namespace JSON
 		}
 
 		serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
-		if ((options & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+		if (options.hasFlags(Encoding::UTF8)) [[likely]]
 		{
 			utf16ToUtf8(stream, *value);
 		}

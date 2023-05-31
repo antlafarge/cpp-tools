@@ -20,6 +20,11 @@ namespace JSON
 		return static_cast<Encoding>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
 	}
 
+	bool hasFlags(Encoding encoding, Encoding flags)
+	{
+		return (encoding & flags) == flags;
+	}
+
 	uint32_t codePointToUtf8(uint32_t codePoint)
 	{
 		if (codePoint < 0x80) [[likely]]
@@ -113,7 +118,7 @@ namespace JSON
 			{
 				throw std::invalid_argument("utf16_codepoint_invalid");
 			}
-			else if ((encoding & Encoding::LittleEndian) == Encoding::LittleEndian) [[unlikely]]
+			else if (hasFlags(encoding, Encoding::LittleEndian)) [[unlikely]]
 			{
 				codePoint = ((codePoint & 0xFF) << 8) | ((codePoint & 0xFF00) >> 8);
 			}
@@ -122,7 +127,7 @@ namespace JSON
 		else if (codePoint < 0x110000) [[unlikely]]
 		{
 			codePoint -= 0x10000;
-			if ((encoding & Encoding::LittleEndian) == Encoding::LittleEndian) [[unlikely]]
+			if (hasFlags(encoding, Encoding::LittleEndian)) [[unlikely]]
 			{
 				codePoint = 0x00D800DC
 					| ((codePoint & 0xC0000) << 12)
@@ -147,7 +152,7 @@ namespace JSON
 
 	uint32_t utf16ToCodePoint(uint32_t unicode, Encoding encoding)
 	{
-		if ((encoding & Encoding::LittleEndian) == Encoding::LittleEndian) [[unlikely]]
+		if (hasFlags(encoding, Encoding::LittleEndian)) [[unlikely]]
 		{
 			if (unicode < 0x10000) [[likely]]
 			{
@@ -190,7 +195,7 @@ namespace JSON
 	uint32_t utf16ToCodePoint(wchar_t firstPart, wchar_t secondPart, Encoding encoding)
 	{
 		uint32_t unicode;
-		if ((encoding & Encoding::LittleEndian) == Encoding::LittleEndian) [[likely]]
+		if (hasFlags(encoding, Encoding::LittleEndian)) [[likely]]
 		{
 			unicode = (static_cast<uint32_t>(firstPart) << 16) | static_cast<uint32_t>(secondPart);
 		}
@@ -203,7 +208,7 @@ namespace JSON
 
 	uint32_t codePointToUtf32(uint32_t codePoint, Encoding encoding)
 	{
-		if ((encoding & Encoding::LittleEndian) == Encoding::LittleEndian) [[likely]]
+		if (hasFlags(encoding, Encoding::LittleEndian)) [[likely]]
 		{
 			if ((codePoint & 0xFFFE) == 0xFFFE) [[unlikely]]
 			{
@@ -231,7 +236,7 @@ namespace JSON
 
 	uint32_t utf32ToCodePoint(uint32_t unicode, Encoding encoding)
 	{
-		if ((encoding & Encoding::LittleEndian) == Encoding::LittleEndian) [[likely]]
+		if (hasFlags(encoding, Encoding::LittleEndian)) [[likely]]
 		{
 			unicode = ((unicode << 24) & 0xFF000000) | ((unicode << 8) & 0xFF0000) | ((unicode >> 8) & 0xFF00) | ((unicode >> 24) & 0xFF);
 			if ((unicode & 0xFFFE) == 0xFFFE) [[unlikely]]
@@ -264,15 +269,15 @@ namespace JSON
 			encoding = JSON_DEFAULT_ENCODING;
 		}
 
-			if ((encoding & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+			if (hasFlags(encoding, Encoding::UTF8)) [[likely]]
 			{
 				return codePointToUtf8(codePoint);
 			}
-			else if ((encoding & Encoding::UTF16) == Encoding::UTF16) [[unlikely]]
+			else if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
 			{
 				return codePointToUtf16(codePoint, encoding);
 			}
-			else if ((encoding & Encoding::UTF32) == Encoding::UTF32) [[unlikely]]
+			else if (hasFlags(encoding, Encoding::UTF32)) [[unlikely]]
 			{
 				return codePointToUtf32(codePoint, encoding);
 			}
@@ -286,15 +291,15 @@ namespace JSON
 			encoding = JSON_DEFAULT_ENCODING;
 		}
 
-			if ((encoding & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+			if (hasFlags(encoding, Encoding::UTF8)) [[likely]]
 			{
 				return utf8ToCodePoint(unicode);
 			}
-			else if ((encoding & Encoding::UTF16) == Encoding::UTF16) [[unlikely]]
+			else if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
 			{
 				return utf16ToCodePoint(unicode, encoding);
 			}
-			else if ((encoding & Encoding::UTF32) == Encoding::UTF32) [[unlikely]]
+			else if (hasFlags(encoding, Encoding::UTF32)) [[unlikely]]
 			{
 				return utf32ToCodePoint(unicode, encoding);
 			}
@@ -382,7 +387,7 @@ namespace JSON
 
 		int32_t& unicode = codePoint = 0;
 		size = 0;
-		if ((encoding & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+		if (hasFlags(encoding, Encoding::UTF8)) [[likely]]
 		{
 			int32_t b = 0;
 			unicode = b = stream.get();
@@ -421,7 +426,7 @@ namespace JSON
 					}
 				codePoint = utf8ToCodePoint(unicode);
 		}
-		else if ((encoding & Encoding::UTF16) == Encoding::UTF16) [[unlikely]]
+		else if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
 		{
 			int32_t b1, b2;
 			for (int i = 0; i < 2; i++)
@@ -435,14 +440,14 @@ namespace JSON
 					return 0;
 				}
 				unicode = (unicode << (i * 16)) | ((b1 << 8) | b2);
-				if ((encoding & Encoding::LittleEndian) == Encoding::LittleEndian) [[likely]]
+				if (hasFlags(encoding, Encoding::LittleEndian)) [[likely]]
 				{
 					if ((unicode & 0x00F8) != 0x00D8) [[likely]]
 					{
 						break;
 					}
 				}
-				else if ((encoding & Encoding::BigEndian) == Encoding::BigEndian) [[unlikely]]
+				else if (hasFlags(encoding, Encoding::BigEndian)) [[unlikely]]
 				{
 					if ((unicode & 0xF800) != 0xD800) [[likely]]
 					{
@@ -452,7 +457,7 @@ namespace JSON
 			}
 			codePoint = utf16ToCodePoint(unicode, encoding);
 		}
-		else if ((encoding & Encoding::UTF32) == Encoding::UTF32) [[unlikely]]
+		else if (hasFlags(encoding, Encoding::UTF32)) [[unlikely]]
 		{
 			size = 4;
 			int32_t b1 = stream.get();
@@ -503,7 +508,7 @@ namespace JSON
 
 		uint8_t* byteArray = (uint8_t*)&unicode;
 		uint8_t byte = 0;
-		bool started = ((encoding & Encoding::UTF32) == Encoding::UTF32);
+		bool started = hasFlags(encoding, Encoding::UTF32);
 #if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
 		static const int utf8last = 3;
 		static const int utf16last = 2;
@@ -521,14 +526,14 @@ namespace JSON
 				{
 					started = true;
 				}
-				else if ((encoding & Encoding::UTF8) == Encoding::UTF8) [[unlikely]]
+				else if (hasFlags(encoding, Encoding::UTF8)) [[unlikely]]
 				{
 					if (i == utf8last) [[unlikely]]
 					{
 						started = true;
 					}
 				}
-				else if ((encoding & Encoding::UTF16) == Encoding::UTF16) [[unlikely]]
+				else if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
 				{
 					if (i == utf16last) [[unlikely]]
 					{
@@ -559,7 +564,7 @@ namespace JSON
 		std::cout << std::hex << std::uppercase << std::setfill('0');
 #endif
 
-		if ((encoding & Encoding::UTF8) == Encoding::UTF8) [[unlikely]]
+		if (hasFlags(encoding, Encoding::UTF8)) [[unlikely]]
 		{
 			assert(false); // you should not store an UTF8 string in a wstring/wstream
 
@@ -584,7 +589,7 @@ namespace JSON
 				}
 			}
 		}
-		else if ((encoding & Encoding::UTF16) == Encoding::UTF16) [[likely]]
+		else if (hasFlags(encoding, Encoding::UTF16)) [[likely]]
 		{
 #if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
 			const int start = 0, end = 2, increment = 1;
@@ -605,7 +610,7 @@ namespace JSON
 				}
 			}
 		}
-		else if ((encoding & Encoding::UTF32) == Encoding::UTF32) [[unlikely]]
+		else if (hasFlags(encoding, Encoding::UTF32)) [[unlikely]]
 		{
 			assert(false); // you should not store an UTF32 string in a wstring/wstream
 
@@ -711,15 +716,15 @@ namespace JSON
 	void writeBOM(std::ostream& stream, Encoding encoding)
 	{
 	#if defined(JSON_DEFAULT_WRITE_UTF8_BOM) && JSON_DEFAULT_WRITE_UTF8_BOM != 0
-		if ((encoding & Encoding::UTF8) == Encoding::UTF8) [[likely]]
+		if (encoding.hasFlags(Encoding::UTF8)) [[likely]]
 		{
 			stream << uint8_t(0xEF) << uint8_t(0xBB) << uint8_t(0xBF);
 		}
 	#endif
 	#if defined(JSON_DEFAULT_WRITE_UTF16_BOM) && JSON_DEFAULT_WRITE_UTF16_BOM != 0
-		if ((encoding & Encoding::UTF16) == Encoding::UTF16) [[unlikely]]
+		if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
 		{
-			if ((encoding & Encoding::LittleEndian) == Encoding::LittleEndian) [[unlikely]]
+			if (hasFlags(encoding, Encoding::LittleEndian)) [[unlikely]]
 			{
 				stream << uint8_t(0xFF) << uint8_t(0xFE);
 			}

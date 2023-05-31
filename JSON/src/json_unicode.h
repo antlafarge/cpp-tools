@@ -41,6 +41,8 @@ namespace JSON
 
 	Encoding operator&(Encoding lhs, Encoding rhs);
 
+	bool hasFlags(Encoding encoding, Encoding flags);
+
 	uint32_t codePointToUtf8(uint32_t codePoint);
 
 	uint32_t utf8ToCodePoint(uint32_t unicode);
