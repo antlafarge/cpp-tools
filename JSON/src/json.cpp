@@ -2,6 +2,8 @@
 #include "json_implementations.h"
 
 #include <iomanip>
+#include <sstream>
+#include <string>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
@@ -9,124 +11,157 @@
 
 namespace JSON
 {
-	Options Options::merge(const Options& optionsOverride, const Options& optionsDefault)
+	Type operator|(Type lhs, Type rhs)
 	{
-		Options options;
-		options.precision = optionsOverride.precision != -1 ? optionsOverride.precision : optionsDefault.precision;
-		options.encoding = optionsOverride.encoding != Encoding::None ? optionsOverride.encoding : optionsDefault.encoding;
-		return options;
+		return static_cast<Type>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
 	}
 
-	Options::Options(Encoding encoding)
-		: encoding(encoding)
+	Type operator&(Type lhs, Type rhs)
+	{
+		return static_cast<Type>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
+	}
+
+	Options::Options::Options(Encoding jsonEncoding)
+		: jsonEncoding(jsonEncoding)
 	{
 	}
 
-	Options::Options(std::streamsize precision)
+	Options::Options(Encoding jsonEncoding, Encoding memberEncoding)
+		: jsonEncoding(jsonEncoding)
+		, memberEncoding(memberEncoding)
+	{
+	}
+
+	Options::Options(int32_t precision)
 		: precision(precision)
 	{
 	}
 
-	Options::Options(Encoding encoding, std::streamsize precision)
-		: encoding(encoding)
+	Options::Options(Encoding jsonEncoding, int32_t precision)
+		: jsonEncoding(jsonEncoding)
 		, precision(precision)
 	{
 	}
 
-	Options::Options(std::streamsize precision, Encoding encoding)
-		: encoding(encoding)
+	Options::Options(Encoding jsonEncoding, Encoding memberEncoding, int32_t precision)
+		: jsonEncoding(jsonEncoding)
+		, memberEncoding(memberEncoding)
+		, precision(precision)
+	{
+	}
+
+	Options::Options(int32_t precision, Encoding jsonEncoding)
+		: jsonEncoding(jsonEncoding)
+		, precision(precision)
+	{
+	}
+
+	Options::Options(int32_t precision, Encoding jsonEncoding, Encoding memberEncoding)
+		: jsonEncoding(jsonEncoding)
+		, memberEncoding(memberEncoding)
 		, precision(precision)
 	{
 	}
 
 	Options::Options(const Options& other)
-		: encoding(other.encoding)
+		: jsonEncoding(other.jsonEncoding)
+		, memberEncoding(other.memberEncoding)
 		, precision(other.precision)
 	{
 	}
 
 	Options::Options(Options&& other) noexcept
-		: encoding(other.encoding)
+		: jsonEncoding(other.jsonEncoding)
+		, memberEncoding(other.memberEncoding)
 		, precision(other.precision)
 	{
 	}
 
 	Options& Options::operator=(const Options& other)
 	{
-		encoding = other.encoding;
+		jsonEncoding = other.jsonEncoding;
+		memberEncoding = other.memberEncoding;
 		precision = other.precision;
 		return *this;
 	}
 
 	Options& Options::operator=(Options&& other) noexcept
 	{
-		encoding = other.encoding;
+		jsonEncoding = other.jsonEncoding;
+		memberEncoding = other.memberEncoding;
 		precision = other.precision;
 		return *this;
 	}
 
-	Options::operator Encoding() const
-	{
-		return encoding;
-	}
-
-	void Options::merge(const Options& options)
-	{
-		encoding = (encoding == Encoding::None && options.encoding != Encoding::None ? options.encoding : encoding);
-		precision = (precision == -1 && options.precision != -1 ? options.precision : precision);
-	}
-
-	bool Options::hasFlags(Encoding flags) const
-	{
-		return JSON::hasFlags(encoding, flags);
-	}
-
-	Field::Field(const char* fieldName, const Options& options)
+	Field::Field(const char* fieldName, Encoding memberEncoding, int32_t precision)
 		: name(fieldName)
-		, options(options)
+		, memberEncoding(memberEncoding)
+		, precision(precision)
 	{
 	}
 
-	Field::Field(const std::string& fieldName, const Options& options)
+	Field::Field(const std::string& fieldName, Encoding memberEncoding, int32_t precision)
 		: name(fieldName)
-		, options(options)
+		, memberEncoding(memberEncoding)
+		, precision(precision)
 	{
 	}
 
-	Field::Field(std::string&& fieldName, const Options& options)
+	Field::Field(std::string&& fieldName, Encoding memberEncoding, int32_t precision)
 		: name(fieldName)
-		, options(options)
+		, memberEncoding(memberEncoding)
+		, precision(precision)
 	{
 	}
 
-	Field::Field(const Options& options)
-		: options(options)
+	Field::Field(const char* fieldName, int32_t precision, Encoding memberEncoding)
+		: name(fieldName)
+		, memberEncoding(memberEncoding)
+		, precision(precision)
+	{
+	}
+
+	Field::Field(const std::string& fieldName, int32_t precision, Encoding memberEncoding)
+		: name(fieldName)
+		, memberEncoding(memberEncoding)
+		, precision(precision)
+	{
+	}
+
+	Field::Field(std::string&& fieldName, int32_t precision, Encoding memberEncoding)
+		: name(fieldName)
+		, memberEncoding(memberEncoding)
+		, precision(precision)
 	{
 	}
 
 	Field::Field(const Field& other)
 		: name(other.name)
-		, options(other.options)
+		, memberEncoding(other.memberEncoding)
+		, precision(other.precision)
 	{
 	}
 
 	Field::Field(Field&& other) noexcept
 		: name(std::move(other.name))
-		, options(std::move(other.options))
+		, memberEncoding(other.memberEncoding)
+		, precision(other.precision)
 	{
 	}
 
-	Field& Field::operator=(const Field& right)
+	Field& Field::operator=(const Field& other)
 	{
-		name = right.name;
-		options = right.options;
+		name = other.name;
+		memberEncoding = other.memberEncoding;
+		precision = other.precision;
 		return *this;
 	}
 
-	Field& Field::operator=(Field&& right) noexcept
+	Field& Field::operator=(Field&& other) noexcept
 	{
-		name = std::move(right.name);
-		options = std::move(right.options);
+		name = std::move(other.name);
+		memberEncoding = std::move(other.memberEncoding);
+		precision = std::move(other.precision);
 		return *this;
 	}
 
@@ -145,137 +180,140 @@ namespace JSON
 		return name;
 	}
 
-	Value::Value(Type type)
-		: type(Type::Null)
-		, ptr(nullptr)
+	Value::Value(Type srcType)
 	{
-		*this = type;
+		*this = srcType;
 	}
 
-	Value::Value(const bool value)
+	Value::Value(const bool srcBoolean)
 		: type(Type::Boolean)
-		, ptrBoolean(new bool(value))
+		, ptrBoolean(new bool(srcBoolean))
 	{
 	}
 
-	Value::Value(const int8_t value)
+	Value::Value(const int8_t srcNumber)
 		: type(Type::NumberI)
-		, ptrNumberI(new int64_t(static_cast<int64_t>(value)))
+		, ptrNumberI(new int64_t(static_cast<int64_t>(srcNumber)))
 	{
 	}
 
-	Value::Value(const int16_t value)
+	Value::Value(const int16_t srcNumber)
 		: type(Type::NumberI)
-		, ptrNumberI(new int64_t(static_cast<int64_t>(value)))
+		, ptrNumberI(new int64_t(static_cast<int64_t>(srcNumber)))
 	{
 	}
 
-	Value::Value(const int32_t value)
+	Value::Value(const int32_t srcNumber)
 		: type(Type::NumberI)
-		, ptrNumberI(new int64_t(static_cast<int64_t>(value)))
+		, ptrNumberI(new int64_t(static_cast<int64_t>(srcNumber)))
 	{
 	}
 
-	Value::Value(const int64_t value)
+	Value::Value(const int64_t srcNumber)
 		: type(Type::NumberI)
-		, ptrNumberI(new int64_t(value))
+		, ptrNumberI(new int64_t(srcNumber))
 	{
 	}
 
-	Value::Value(const uint8_t value)
+	Value::Value(const uint8_t srcNumber)
 		: type(Type::NumberU)
-		, ptrNumberU(new uint64_t(static_cast<uint64_t>(value)))
+		, ptrNumberU(new uint64_t(static_cast<uint64_t>(srcNumber)))
 	{
 	}
 
-	Value::Value(const uint16_t value)
+	Value::Value(const uint16_t srcNumber)
 		: type(Type::NumberU)
-		, ptrNumberU(new uint64_t(static_cast<uint64_t>(value)))
+		, ptrNumberU(new uint64_t(static_cast<uint64_t>(srcNumber)))
 	{
 	}
 
-	Value::Value(const uint32_t value)
+	Value::Value(const uint32_t srcNumber)
 		: type(Type::NumberU)
-		, ptrNumberU(new uint64_t(static_cast<uint64_t>(value)))
+		, ptrNumberU(new uint64_t(static_cast<uint64_t>(srcNumber)))
 	{
 	}
 
-	Value::Value(const uint64_t value)
+	Value::Value(const uint64_t srcNumber)
 		: type(Type::NumberU)
-		, ptrNumberU(new uint64_t(value))
+		, ptrNumberU(new uint64_t(srcNumber))
 	{
 	}
 
-	Value::Value(const float value)
+	Value::Value(const float srcNumber)
 		: type(Type::NumberF)
-		, ptrNumberF(new long double(value))
+		, ptrNumberF(new long double(srcNumber))
 	{
 	}
 
-	Value::Value(const double value)
+	Value::Value(const double srcNumber)
 		: type(Type::NumberF)
-		, ptrNumberF(new long double(value))
+		, ptrNumberF(new long double(srcNumber))
 	{
 	}
 
-	Value::Value(const long double value)
+	Value::Value(const long double srcNumber)
 		: type(Type::NumberF)
-		, ptrNumberF(new long double(value))
+		, ptrNumberF(new long double(srcNumber))
 	{
 	}
 
-	Value::Value(const char* value)
+	Value::Value(const char* srcString)
 		: type(Type::String)
-		, ptrString(new std::string(value))
+		, ptrString(new std::string(srcString))
 	{
 	}
 
-	Value::Value(const std::string& value)
+	Value::Value(const std::string& srcString)
 		: type(Type::String)
-		, ptrString(new std::string(value))
+		, ptrString(new std::string(srcString))
 	{
 	}
 
-	Value::Value(const wchar_t* value, const Options& options)
+	Value::Value(const wchar_t* srcString, Encoding srcEncoding)
+		: Value(std::wstring(srcString), srcEncoding)
+	{
+	}
+
+	Value::Value(const std::wstring& srcString, Encoding srcEncoding)
 		: type(Type::String)
 		, ptrString(new std::string())
 	{
-		utf16ToUtf8(*ptrString, std::wstring(value), options.encoding);
+		if (hasFlags(srcEncoding, Encoding::UTF16)) [[likely]]
+		{
+			convert(*ptrString, srcString, JSON_DEFAULT_ENCODING, srcEncoding);
+		}
+		else [[unlikely]]
+		{
+			throw std::runtime_error("json_value_encodingconversionnotsupported");
+		}
 	}
 
-	Value::Value(const std::wstring& value, const Options& options)
-		: type(Type::String)
-		, ptrString(new std::string())
-	{
-		utf16ToUtf8(*ptrString, value, options.encoding);
-	}
-
-	Value::Value(const std::vector<Value>& value)
+	Value::Value(const std::vector<Value>& srcContainer)
 		: type(Type::Array)
-		, ptrArray(new std::vector<Value>(value))
+		, ptrArray(new std::vector<Value>(srcContainer))
 	{
 	}
 
-	Value::Value(const std::unordered_map<std::string, Value>& value)
+	Value::Value(const std::unordered_map<std::string, Value>& srcContainer)
 		: type(Type::Object)
 		, ptrObject(new std::unordered_map<Field, Value>())
 	{
-		ptrObject->reserve(value.size());
-		for (auto& pair : value)
+		ptrObject->reserve(srcContainer.size());
+		for (auto& pair : srcContainer)
 		{
 			(*ptrObject)[pair.first] = pair.second;
 		}
 	}
 
-	Value::Value(const std::unordered_map<Field, Value>& value)
+	Value::Value(const std::unordered_map<Field, Value>& srcContainer)
 		: type(Type::Object)
-		, ptrObject(new std::unordered_map<Field, Value>(value))
+		, ptrObject(new std::unordered_map<Field, Value>(srcContainer))
 	{
 	}
 
 	Value::Value(const Value& other)
 	{
-		copyData(other);
+		*this = other;
 	}
 
 	Value::Value(Value&& other) noexcept
@@ -291,8 +329,34 @@ namespace JSON
 
 	Value& Value::operator=(const Value& other)
 	{
-		deleteData();
-		copyData(other);
+		switch (other.type)
+		{
+		case Type::Boolean:
+			*this = *other.ptrBoolean;
+			break;
+		case Type::NumberI:
+			*this = *other.ptrNumberI;
+			break;
+		case Type::NumberU:
+			*this = *other.ptrNumberU;
+			break;
+		case Type::NumberF:
+			*this = *other.ptrNumberF;
+			break;
+		case Type::String:
+			*this = *other.ptrString;
+			break;
+		case Type::Array:
+			*this = *other.ptrArray;
+			break;
+		case Type::Object:
+			*this = *other.ptrObject;
+			break;
+		case Type::Null:
+		default:
+			break;
+		}
+
 		return *this;
 	}
 
@@ -303,12 +367,17 @@ namespace JSON
 		return *this;
 	}
 
-	Value& Value::operator=(const Type type2)
+	Value& Value::operator=(nullptr_t)
 	{
-		if (type != type2) [[unlikely]]
+		return *this = Type::Null;
+	}
+
+	Value& Value::operator=(const Type srcType)
+	{
+		if (type != srcType) [[unlikely]]
 		{
 			deleteData();
-			switch (type2)
+			switch (srcType)
 			{
 			case Type::Boolean: [[unlikely]]
 				ptrBoolean = new bool;
@@ -335,151 +404,147 @@ namespace JSON
 			default: [[unlikely]]
 				break;
 			}
-			type = type2;
+			type = srcType;
 		}
 		return *this;
 	}
 
-	Value& Value::operator=(const bool value)
+	Value& Value::operator=(const bool srcBoolean)
 	{
 		*this = Type::Boolean;
-		*ptrBoolean = value;
+		*ptrBoolean = srcBoolean;
 		return *this;
 	}
 
-	Value& Value::operator=(const int8_t value)
+	Value& Value::operator=(const int8_t srcNumber)
 	{
 		*this = Type::NumberI;
-		*ptrNumberI = value;
+		*ptrNumberI = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const int16_t value)
+	Value& Value::operator=(const int16_t srcNumber)
 	{
 		*this = Type::NumberI;
-		*ptrNumberI = value;
+		*ptrNumberI = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const int32_t value)
+	Value& Value::operator=(const int32_t srcNumber)
 	{
 		*this = Type::NumberI;
-		*ptrNumberI = value;
+		*ptrNumberI = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const int64_t value)
+	Value& Value::operator=(const int64_t srcNumber)
 	{
 		*this = Type::NumberI;
-		*ptrNumberI = value;
+		*ptrNumberI = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const uint8_t value)
+	Value& Value::operator=(const uint8_t srcNumber)
 	{
 		*this = Type::NumberU;
-		*ptrNumberU = value;
+		*ptrNumberU = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const uint16_t value)
+	Value& Value::operator=(const uint16_t srcNumber)
 	{
 		*this = Type::NumberU;
-		*ptrNumberU = value;
+		*ptrNumberU = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const uint32_t value)
+	Value& Value::operator=(const uint32_t srcNumber)
 	{
 		*this = Type::NumberU;
-		*ptrNumberU = value;
+		*ptrNumberU = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const uint64_t value)
+	Value& Value::operator=(const uint64_t srcNumber)
 	{
 		*this = Type::NumberU;
-		*ptrNumberU = value;
+		*ptrNumberU = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const float value)
+	Value& Value::operator=(const float srcNumber)
 	{
 		*this = Type::NumberF;
-		*ptrNumberF = value;
+		*ptrNumberF = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const double value)
+	Value& Value::operator=(const double srcNumber)
 	{
 		*this = Type::NumberF;
-		*ptrNumberF = value;
+		*ptrNumberF = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const long double value)
+	Value& Value::operator=(const long double srcNumber)
 	{
 		*this = Type::NumberF;
-		*ptrNumberF = value;
+		*ptrNumberF = srcNumber;
 		return *this;
 	}
 
-	Value& Value::operator=(const char* value)
+	Value& Value::operator=(const char* srcString)
+	{
+		return *this = std::string(srcString);
+	}
+
+	Value& Value::operator=(const std::string& srcString)
 	{
 		*this = Type::String;
-		*ptrString = value;
+		*ptrString = srcString;
 		return *this;
 	}
 
-	Value& Value::operator=(const std::string& value)
+	Value& Value::operator=(const wchar_t* srcString)
+	{
+		return *this = std::wstring(srcString);
+	}
+
+	Value& Value::operator=(const std::wstring& srcString)
 	{
 		*this = Type::String;
-		*ptrString = value;
+		convert(*ptrString, srcString, Encoding::UTF8, Encoding::UTF16BE);
 		return *this;
 	}
 
-	Value& Value::operator=(const wchar_t* value)
-	{
-		*this = Type::String;
-		utf16ToUtf8(*ptrString, std::wstring(value));
-		return *this;
-	}
-
-	Value& Value::operator=(const std::wstring& value)
-	{
-		*this = Type::String;
-		utf16ToUtf8(*ptrString, value);
-		return *this;
-	}
-
-	Value& Value::operator=(const std::vector<Value>& value)
+	Value& Value::operator=(const std::vector<Value>& srcContainer)
 	{
 		*this = Type::Array;
-		*ptrArray = value;
+		*ptrArray = srcContainer;
 		return *this;
 	}
 
-	Value& Value::operator=(const std::unordered_map<std::string, Value>& value)
+	Value& Value::operator=(const std::unordered_map<std::string, Value>& srcContainer)
 	{
 		*this = Type::Object;
-		ptrObject->reserve(value.size());
-		for (auto& pair : value)
+		ptrObject->reserve(srcContainer.size());
+		for (auto& pair : srcContainer)
 		{
 			(*ptrObject)[pair.first] = pair.second;
 		}
 		return *this;
 	}
 
-	Value& Value::operator=(const std::unordered_map<Field, Value>& value)
+	Value& Value::operator=(const std::unordered_map<Field, Value>& srcContainer)
 	{
 		*this = Type::Object;
-		*ptrObject = value;
+		*ptrObject = srcContainer;
 		return *this;
 	}
 
-	bool Value::operator==(const Type type2) const
+	bool Value::operator==(const Type otherType) const
 	{
-		return type == type2;
+		return type == otherType;
 	}
 
 	bool Value::operator==(const Value& other) const
@@ -499,7 +564,7 @@ namespace JSON
 				if (*ptrNumberI < 0) return false;
 				return *ptrNumberI == *other.ptrNumberI;
 			case Type::NumberF:
-				return *ptrNumberI == *other.ptrNumberF;
+				return static_cast<long double>(*ptrNumberI) == *other.ptrNumberF;
 			default:
 				return false;
 			}
@@ -520,9 +585,9 @@ namespace JSON
 			switch (other.type)
 			{
 			case Type::NumberI:
-				return *ptrNumberF == *other.ptrNumberI;
+				return *ptrNumberF == static_cast<long double>(*other.ptrNumberI);
 			case Type::NumberU:
-				return *ptrNumberF == *other.ptrNumberU;
+				return *ptrNumberF == static_cast<long double>(*other.ptrNumberU);
 			case Type::NumberF:
 				return *ptrNumberF == *other.ptrNumberF;
 			default:
@@ -539,9 +604,9 @@ namespace JSON
 		}
 	}
 
-	bool Value::operator!=(const Value& right) const
+	bool Value::operator!=(const Value& other) const
 	{
-		return !(*this == right);
+		return !(*this == other);
 	}
 
 	Value Value::createNull()
@@ -584,36 +649,69 @@ namespace JSON
 		return Value(Type::Object);
 	}
 
-	void Value::copyData(const Value& other)
+	bool& Value::getBoolean() const
 	{
-		switch (other.type)
-		{
-		case Type::Boolean:
-			ptrBoolean = { new bool(*other.ptrBoolean) };
-			break;
-		case Type::NumberI:
-			ptrNumberI = { new int64_t(*other.ptrNumberI) };
-			break;
-		case Type::NumberU:
-			ptrNumberU = { new uint64_t(*other.ptrNumberU) };
-			break;
-		case Type::NumberF:
-			ptrNumberF = { new long double(*other.ptrNumberF) };
-			break;
-		case Type::String:
-			ptrString = { new std::string(*other.ptrString) };
-			break;
-		case Type::Array:
-			ptrArray = { new std::vector<Value>(*other.ptrArray) };
-			break;
-		case Type::Object:
-			ptrObject = { new std::unordered_map<Field, Value>(*other.ptrObject) };
-			break;
-		case Type::Null:
-		default:
-			break;
-		}
-		type = other.type;
+		return *ptrBoolean;
+	}
+
+	int64_t& Value::getNumberI() const
+	{
+		return *ptrNumberI;
+	}
+
+	uint64_t& Value::getNumberU() const
+	{
+		return *ptrNumberU;
+	}
+
+	long double& Value::getNumberF() const
+	{
+		return *ptrNumberF;
+	}
+
+	std::string& Value::getString() const
+	{
+		return *ptrString;
+	}
+
+	std::vector<Value>& Value::getArray() const
+	{
+		return *ptrArray;
+	}
+
+	std::unordered_map<Field, Value>& Value::getObject() const
+	{
+		return *ptrObject;
+	}
+
+	bool Value::isNull() const
+	{
+		return type == Type::Null;
+	}
+
+	bool Value::isBoolean() const
+	{
+		return type == Type::Boolean;
+	}
+
+	bool Value::isNumber() const
+	{
+		return type == Type::NumberI || type == Type::NumberU || type == Type::NumberF;
+	}
+
+	bool Value::isString() const
+	{
+		return type == Type::String;
+	}
+
+	bool Value::isArray() const
+	{
+		return type == Type::Array;
+	}
+
+	bool Value::isObject() const
+	{
+		return type == Type::Object;
 	}
 
 	void Value::deleteData()
@@ -651,206 +749,194 @@ namespace JSON
 
 #pragma region Serialization
 
-	void serializeValue(std::ostream& stream, const Value* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const Value* srcValue, const Options& options)
 	{
-		switch (value->type)
+		switch (srcValue->type)
 		{
 		case Type::Null:
 		{
 			std::optional<bool> null;
-			serializeValue(stream, &null, options);
+			serializeValue(dstStream, &null, options);
 			break;
 		}
 		case Type::Boolean:
-			serializeValue(stream, value->ptrBoolean, options);
+			serializeValue(dstStream, srcValue->ptrBoolean, options);
 			break;
 		case Type::NumberI:
-			serializeValue(stream, value->ptrNumberI, options);
+			serializeValue(dstStream, srcValue->ptrNumberI, options);
 			break;
 		case Type::NumberU:
-			serializeValue(stream, value->ptrNumberU, options);
+			serializeValue(dstStream, srcValue->ptrNumberU, options);
 			break;
 		case Type::NumberF:
-			serializeValue(stream, value->ptrNumberF, options);
+			serializeValue(dstStream, srcValue->ptrNumberF, options);
 			break;
 		case Type::String:
-			serializeValue(stream, value->ptrString, options);
+			serializeValue(dstStream, srcValue->ptrString, options);
 			break;
 		case Type::Array:
-			serializeValue(stream, value->ptrArray, options);
+			serializeValue(dstStream, srcValue->ptrArray, options);
 			break;
 		case Type::Object:
-			serializeValue(stream, value->ptrObject, options);
+			serializeValue(dstStream, srcValue->ptrObject, options);
 			break;
 		default: [[unlikely]]
 			throw std::runtime_error("json_serialize_value_badtype");
 		}
 	}
 
-	void serializeValue(std::ostream& stream, const bool* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const bool* srcBoolean, const Options& options)
 	{
-		if (*value)
+		if (*srcBoolean)
 		{
-			serializeUnicodeChar(stream, codePointToUnicode('t', options), options);
-			serializeUnicodeChar(stream, codePointToUnicode('r', options), options);
-			serializeUnicodeChar(stream, codePointToUnicode('u', options), options);
-			serializeUnicodeChar(stream, codePointToUnicode('e', options), options);
+			serializeCodePointChar(dstStream, 't', options.jsonEncoding);
+			serializeCodePointChar(dstStream, 'r', options.jsonEncoding);
+			serializeCodePointChar(dstStream, 'u', options.jsonEncoding);
+			serializeCodePointChar(dstStream, 'e', options.jsonEncoding);
 		}
 		else
 		{
-			serializeUnicodeChar(stream, codePointToUnicode('f', options), options);
-			serializeUnicodeChar(stream, codePointToUnicode('a', options), options);
-			serializeUnicodeChar(stream, codePointToUnicode('l', options), options);
-			serializeUnicodeChar(stream, codePointToUnicode('s', options), options);
-			serializeUnicodeChar(stream, codePointToUnicode('e', options), options);
+			serializeCodePointChar(dstStream, 'f', options.jsonEncoding);
+			serializeCodePointChar(dstStream, 'a', options.jsonEncoding);
+			serializeCodePointChar(dstStream, 'l', options.jsonEncoding);
+			serializeCodePointChar(dstStream, 's', options.jsonEncoding);
+			serializeCodePointChar(dstStream, 'e', options.jsonEncoding);
 		}
 	}
 
-	void serializeValue(std::ostream& stream, const int8_t* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const int8_t* srcNumber, const Options& options)
 	{
-		int64_t valueNumber = static_cast<int64_t>(*value);
-		serializeValueInteger(stream, &valueNumber, options);
+		int64_t valueNumber = static_cast<int64_t>(*srcNumber);
+		serializeValueInteger(dstStream, &valueNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const uint8_t* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const uint8_t* srcNumber, const Options& options)
 	{
-		int64_t valueNumber = static_cast<uint64_t>(*value);
-		serializeValueInteger(stream, &valueNumber, options);
+		uint64_t valueNumber = static_cast<uint64_t>(*srcNumber);
+		serializeValueInteger(dstStream, &valueNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const int16_t* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const int16_t* srcNumber, const Options& options)
 	{
-		int64_t valueNumber = static_cast<int64_t>(*value);
-		serializeValueInteger(stream, &valueNumber, options);
+		int64_t valueNumber = static_cast<int64_t>(*srcNumber);
+		serializeValueInteger(dstStream, &valueNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const uint16_t* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const uint16_t* srcNumber, const Options& options)
 	{
-		int64_t valueNumber = static_cast<uint64_t>(*value);
-		serializeValueInteger(stream, &valueNumber, options);
+		uint64_t valueNumber = static_cast<uint64_t>(*srcNumber);
+		serializeValueInteger(dstStream, &valueNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const int32_t* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const int32_t* srcNumber, const Options& options)
 	{
-		int64_t valueNumber = static_cast<int64_t>(*value);
-		serializeValueInteger(stream, &valueNumber, options);
+		int64_t valueNumber = static_cast<int64_t>(*srcNumber);
+		serializeValueInteger(dstStream, &valueNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const uint32_t* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const uint32_t* srcNumber, const Options& options)
 	{
-		int64_t valueNumber = static_cast<uint64_t>(*value);
-		serializeValueInteger(stream, &valueNumber, options);
+		uint64_t valueNumber = static_cast<uint64_t>(*srcNumber);
+		serializeValueInteger(dstStream, &valueNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const int64_t* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const int64_t* srcNumber, const Options& options)
 	{
-		serializeValueInteger(stream, value, options);
+		serializeValueInteger(dstStream, srcNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const uint64_t* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const uint64_t* srcNumber, const Options& options)
 	{
-		serializeValueInteger(stream, value, options);
+		serializeValueInteger(dstStream, srcNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const float* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const float* srcNumber, const Options& options)
 	{
-		serializeValueFloat(stream, value, options);
+		serializeValueFloat(dstStream, srcNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const double* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const double* srcNumber, const Options& options)
 	{
-		serializeValueFloat(stream, value, options);
+		serializeValueFloat(dstStream, srcNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const long double* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const long double* srcNumber, const Options& options)
 	{
-		serializeValueFloat(stream, value, options);
+		serializeValueFloat(dstStream, srcNumber, options);
 	}
 
-	void serializeValue(std::ostream& stream, const std::string* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::string* srcString, const Options& options)
 	{
-		if (options == Encoding::None) [[unlikely]]
+		serializeCodePointChar(dstStream, '"', options.jsonEncoding);
+		if (options.memberEncoding <= Encoding::UTF8 && options.jsonEncoding <= Encoding::UTF8) [[likely]]
 		{
-			options.encoding = JSON_DEFAULT_ENCODING;
-		}
-
-		serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
-		if (options.hasFlags(Encoding::UTF8)) [[likely]]
-		{
-			stream << *value;
+			dstStream << *srcString;
 		}
 		else [[unlikely]]
 		{
-			std::istringstream stream2(*value);
-			int32_t codePoint = 0;
-			Encoding encoding = Encoding::UTF8;
-			while (true)
-			{
-				JSON_READ_CHAR(stream2, codePoint, encoding);
-				if (codePoint == EOF)
-				{
-					break;
-				}
-				serializeUnicodeChar(stream, codePointToUnicode(codePoint, options), options);
-			}
+			convert(dstStream, *srcString, options.jsonEncoding, options.memberEncoding);
 		}
-		serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
+		serializeCodePointChar(dstStream, '"', options.jsonEncoding);
 	}
 
-	void serializeValue(std::ostream& stream, const std::wstring* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::wstring* srcString, const Options& options)
 	{
-		if (options == Encoding::None) [[unlikely]]
-		{
-			options.encoding = JSON_DEFAULT_ENCODING;
-		}
-
-		serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
-		if (options.hasFlags(Encoding::UTF8)) [[likely]]
-		{
-			utf16ToUtf8(stream, *value);
-		}
-		else [[unlikely]]
-		{
-			std::stringstream stream2;
-			utf16ToUtf8(stream2, *value);
-			stream2.seekg(0, stream2.beg);
-			int32_t codePoint = 0;
-			Encoding encoding = Encoding::UTF8;
-			while (true)
-			{
-				JSON_READ_CHAR(stream2, codePoint, encoding);
-				if (codePoint == EOF)
-				{
-					break;
-				}
-				serializeUnicodeChar(stream, codePointToUnicode(codePoint, options), options);
-			}
-		}
-		serializeUnicodeChar(stream, codePointToUnicode('"', options), options);
+		serializeCodePointChar(dstStream, '"', options.jsonEncoding);
+		convert(dstStream, *srcString, options.jsonEncoding, (options.memberEncoding != Encoding::Unknown ? options.memberEncoding : JSON_DEFAULT_ENCODING_WSTRING));
+		serializeCodePointChar(dstStream, '"', options.jsonEncoding);
 	}
 
 #pragma endregion
 
 #pragma region Deserialization
 
-	bool isValid(const std::string& json, const Options& options) noexcept
+	bool isValid(const std::string& srcJson, const Options& options) noexcept
 	{
-		std::istringstream stream(json);
-		return isValid(stream, options);
+		std::istringstream srcStream(srcJson);
+		return isValid(srcStream, options);
 	}
 
-	bool isValid(std::istream&& stream, const Options& options) noexcept
+	bool isValid(std::ifstream&& srcStream, const Options& options) noexcept
 	{
-		std::istream stream2(stream.rdbuf());
-		return isValid(stream2, options);
+		std::istream srcStream2(srcStream.rdbuf());
+		Options options2(options);
+		if (srcStream.gcount() == 0) [[likely]]
+		{
+			readBOM(srcStream2, options2.jsonEncoding);
+			if (options.jsonEncoding != JSON_DEFAULT_ENCODING) [[unlikely]]
+			{
+				options2.jsonEncoding = options.jsonEncoding;
+			}
+		}
+		return isValid(srcStream2, options2);
 	}
 
-	bool isValid(std::istream& stream, const Options& options) noexcept
+	bool isValid(std::ifstream& srcStream, const Options& options) noexcept
+	{
+		std::istream srcStream2(srcStream.rdbuf());
+		Options options2(options);
+		if (srcStream.gcount() == 0) [[likely]]
+		{
+			readBOM(srcStream2, options2.jsonEncoding);
+			if (options.jsonEncoding != JSON_DEFAULT_ENCODING) [[unlikely]]
+			{
+				options2.jsonEncoding = options.jsonEncoding;
+			}
+		}
+		return isValid(srcStream2, options2);
+	}
+
+	bool isValid(std::istream&& srcStream, const Options& options) noexcept
+	{
+		std::istream srcStream2(srcStream.rdbuf());
+		return isValid(srcStream2, options);
+	}
+
+	bool isValid(std::istream& srcStream, const Options& options) noexcept
 	{
 		try
 		{
-			Options options2(options);
-			deserializeValue(stream, static_cast<Value*>(nullptr), options2);
+			deserializeValue(srcStream, static_cast<Value*>(nullptr), options);
 			return true;
 		}
 		catch (...)
@@ -859,84 +945,84 @@ namespace JSON
 		}
 	}
 
-	void deserializeFieldValue(const Value&)
+	void deserializeFieldValue(const Value&, const Options&)
 	{
 	}
 
-	void deserializeValue(std::istream& stream, Value* value, Options& options)
+	void deserializeValue(std::istream& srcStream, Value* dstValue, const Options& options)
 	{
-		int codePoint = 0;
-		int bytesCount = JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-		if (codePoint == EOF) [[unlikely]]
+		uint32_t codePoint = 0;
+		int32_t bytesCount = readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
+		if (codePoint == JSON_EOF) [[unlikely]]
 		{
 			throw std::runtime_error("json_deserialize_value_truncated");
 		}
-		JSON_UNGET(stream, bytesCount);
+		JSON_UNGET(srcStream, bytesCount);
 		switch (codePoint)
 		{
 		case 'n':
 		{
-			deserializeValue(stream, static_cast<std::optional<bool>*>(nullptr), options);
-			if (value) [[likely]]
+			deserializeValue(srcStream, static_cast<std::optional<bool>*>(nullptr), options);
+			if (dstValue) [[likely]]
 			{
-				*value = Type::Null;
+				*dstValue = Type::Null;
 			}
 			break;
 		}
 		case 't':
 		case 'f':
-			if (value) [[likely]]
+			if (dstValue) [[likely]]
 			{
-				*value = Type::Boolean;
-				deserializeValue(stream, value->ptrBoolean, options);
+				*dstValue = Type::Boolean;
+				deserializeValue(srcStream, dstValue->ptrBoolean, options);
 			}
 			else [[unlikely]]
 			{
-				deserializeValue(stream, static_cast<bool*>(nullptr), options);
+				deserializeValue(srcStream, static_cast<bool*>(nullptr), options);
 			}
 			break;
 		case '"':
-			if (value) [[likely]]
+			if (dstValue) [[likely]]
 			{
-				*value = Type::String;
-				deserializeValue(stream, value->ptrString, options);
+				*dstValue = Type::String;
+				deserializeValue(srcStream, dstValue->ptrString, options);
 			}
 			else [[unlikely]]
 			{
-				deserializeValue(stream, static_cast<std::string*>(nullptr), options);
+				deserializeValue(srcStream, static_cast<std::string*>(nullptr), options);
 			}
 			break;
 		case '[':
-			if (value) [[likely]]
+			if (dstValue) [[likely]]
 			{
-				*value = Type::Array;
-				deserializeValue(stream, value->ptrArray, options);
+				*dstValue = Type::Array;
+				deserializeValue(srcStream, dstValue->ptrArray, options);
 			}
 			else [[unlikely]]
 			{
-				deserializeValue(stream, static_cast<std::vector<Value>*>(nullptr), options);
+				deserializeValue(srcStream, static_cast<std::vector<Value>*>(nullptr), options);
 			}
 			break;
 		case '{':
-			if (value) [[likely]]
+			if (dstValue) [[likely]]
 			{
-				*value = Type::Object;
-				deserializeValue(stream, value->ptrObject, options);
+				*dstValue = Type::Object;
+				deserializeValue(srcStream, dstValue->ptrObject, options);
 			}
 			else [[unlikely]]
 			{
-				deserializeValue(stream, static_cast<std::unordered_map<std::string, Value>*>(nullptr), options);
+				deserializeValue(srcStream, static_cast<std::unordered_map<std::string, Value>*>(nullptr), options);
 			}
 			break;
 		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': case '-':
-			if (value) [[likely]]
+			if (dstValue) [[likely]]
 			{
 				std::string numberStr;
-				deserializeValueNumberAsString(stream, &numberStr, options);
+				deserializeValueNumberAsString(srcStream, &numberStr, options);
 				if (numberStr.find('.') != std::string::npos) [[unlikely]]
 				{
-					*value = Type::NumberF;
-					*value->ptrNumberF = std::stold(numberStr);
+					*dstValue = Type::NumberF;
+					*dstValue->ptrNumberF = std::stold(numberStr);
 				}
 				else [[likely]]
 				{
@@ -944,25 +1030,25 @@ namespace JSON
 					{
 						if (numberStr[0] == '-') [[unlikely]]
 						{
-							*value = Type::NumberI;
-							*value->ptrNumberI = std::stoll(numberStr);
+							*dstValue = Type::NumberI;
+							*dstValue->ptrNumberI = std::stoll(numberStr);
 						}
 						else [[likely]]
 						{
-							*value = Type::NumberU;
-							*value->ptrNumberU = std::stoull(numberStr);
+							*dstValue = Type::NumberU;
+							*dstValue->ptrNumberU = std::stoull(numberStr);
 						}
 					}
 					catch (const std::out_of_range&)
 					{
-						*value = Type::NumberF;
-						*value->ptrNumberF = std::stold(numberStr);
+						*dstValue = Type::NumberF;
+						*dstValue->ptrNumberF = std::stold(numberStr);
 					}
 				}
 			}
 			else [[unlikely]]
 			{
-				deserializeValueNumberAsString(stream, static_cast<std::string*>(nullptr), options);
+				deserializeValueNumberAsString(srcStream, static_cast<std::string*>(nullptr), options);
 			}
 			break;
 		default: [[unlikely]]
@@ -970,24 +1056,24 @@ namespace JSON
 		}
 	}
 
-	void deserializeValue(std::istream& stream, bool* value, Options& options)
+	void deserializeValue(std::istream& srcStream, bool* dstValue, const Options& options)
 	{
-		int32_t codePoint = 0;
-		JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+		uint32_t codePoint = 0;
+		readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 		if (codePoint == 't') [[likely]]
 		{
-			JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+			readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 			if (codePoint == 'r') [[likely]]
 			{
-				JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+				readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 				if (codePoint == 'u') [[likely]]
 				{
-					JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+					readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 					if (codePoint == 'e') [[likely]]
 					{
-						if (value) [[likely]]
+						if (dstValue) [[likely]]
 						{
-							*value = true;
+							*dstValue = true;
 						}
 						return;
 					}
@@ -996,21 +1082,21 @@ namespace JSON
 		}
 		else if (codePoint == 'f') [[likely]]
 		{
-			JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+			readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 			if (codePoint == 'a') [[likely]]
 			{
-				JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+				readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 				if (codePoint == 'l') [[likely]]
 				{
-					JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+					readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 					if (codePoint == 's') [[likely]]
 					{
-						JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+						readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 						if (codePoint == 'e') [[likely]]
 						{
-							if (value) [[likely]]
+							if (dstValue) [[likely]]
 							{
-								*value = false;
+								*dstValue = false;
 							}
 							return;
 						}
@@ -1019,7 +1105,7 @@ namespace JSON
 			}
 		}
 
-			if (codePoint == EOF) [[likely]]
+			if (codePoint == JSON_EOF) [[likely]]
 			{
 				throw std::runtime_error("json_deserialize_boolean_truncated");
 			}
@@ -1029,15 +1115,15 @@ namespace JSON
 			}
 	}
 
-	void deserializeValue(std::istream& stream, int8_t* value, Options& options)
+	void deserializeValue(std::istream& srcStream, int8_t* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = static_cast<int8_t>(std::stol(number));
+				*dstValue = static_cast<int8_t>(std::stol(number));
 			}
 			catch (const std::exception&)
 			{
@@ -1046,19 +1132,19 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, uint8_t* value, Options& options)
+	void deserializeValue(std::istream& srcStream, uint8_t* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = static_cast<uint8_t>(std::stoul(number));
+				*dstValue = static_cast<uint8_t>(std::stoul(number));
 			}
 			catch (const std::exception&)
 			{
@@ -1067,19 +1153,19 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, int16_t* value, Options& options)
+	void deserializeValue(std::istream& srcStream, int16_t* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = static_cast<int16_t>(std::stol(number));
+				*dstValue = static_cast<int16_t>(std::stol(number));
 			}
 			catch (const std::exception&)
 			{
@@ -1088,19 +1174,19 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, uint16_t* value, Options& options)
+	void deserializeValue(std::istream& srcStream, uint16_t* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = static_cast<uint16_t>(std::stoul(number));
+				*dstValue = static_cast<uint16_t>(std::stoul(number));
 			}
 			catch (const std::exception&)
 			{
@@ -1109,19 +1195,19 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, int32_t* value, Options& options)
+	void deserializeValue(std::istream& srcStream, int32_t* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = std::stol(number);
+				*dstValue = std::stol(number);
 			}
 			catch (const std::exception&)
 			{
@@ -1130,19 +1216,19 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, uint32_t* value, Options& options)
+	void deserializeValue(std::istream& srcStream, uint32_t* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = std::stoul(number);
+				*dstValue = std::stoul(number);
 			}
 			catch (const std::exception&)
 			{
@@ -1151,19 +1237,19 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, int64_t* value, Options& options)
+	void deserializeValue(std::istream& srcStream, int64_t* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = std::stoll(number);
+				*dstValue = std::stoll(number);
 			}
 			catch (const std::exception&)
 			{
@@ -1172,19 +1258,19 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, uint64_t* value, Options& options)
+	void deserializeValue(std::istream& srcStream, uint64_t* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = std::stoull(number);
+				*dstValue = std::stoull(number);
 			}
 			catch (const std::exception&)
 			{
@@ -1193,19 +1279,19 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, float* value, Options& options)
+	void deserializeValue(std::istream& srcStream, float* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = std::stof(number);
+				*dstValue = std::stof(number);
 			}
 			catch (const std::exception&)
 			{
@@ -1214,19 +1300,19 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, double* value, Options& options)
+	void deserializeValue(std::istream& srcStream, double* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = std::stod(number);
+				*dstValue = std::stod(number);
 			}
 			catch (const std::exception&)
 			{
@@ -1235,19 +1321,19 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, long double* value, Options& options)
+	void deserializeValue(std::istream& srcStream, long double* dstValue, const Options& options)
 	{
-		if (value) [[likely]]
+		if (dstValue) [[likely]]
 		{
 			std::string number;
-			deserializeValueNumberAsString(stream, &number, options);
+			deserializeValueNumberAsString(srcStream, &number, options);
 			try
 			{
-				*value = std::stold(number);
+				*dstValue = std::stold(number);
 			}
 			catch (const std::exception&)
 			{
@@ -1256,16 +1342,16 @@ namespace JSON
 		}
 		else [[unlikely]]
 		{
-			deserializeValueNumberAsString(stream, nullptr, options);
+			deserializeValueNumberAsString(srcStream, nullptr, options);
 		}
 	}
 
-	void deserializeValue(std::istream& stream, std::string* value, Options& options)
+	void deserializeValue(std::istream& srcStream, std::string* dstValue, const Options& options)
 	{
-		int32_t codePoint = 0;
+		uint32_t codePoint = 0;
 		bool lastCharWasAntislash = false;
-		JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-		if (codePoint == EOF) [[unlikely]]
+		readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
+		if (codePoint == JSON_EOF) [[unlikely]]
 		{
 			throw std::runtime_error("json_deserialize_string_truncated");
 		}
@@ -1273,14 +1359,14 @@ namespace JSON
 			{
 				throw std::runtime_error("json_deserialize_string_notastring");
 			}
-				if (value) [[likely]]
+				if (dstValue && !dstValue->empty()) [[likely]]
 				{
-					value->clear();
+					dstValue->clear();
 				}
 					while (true)
 					{
-						JSON_READ_CHAR(stream, codePoint, options.encoding);
-						if (codePoint == EOF) [[unlikely]]
+						readChar(srcStream, codePoint, options.jsonEncoding);
+						if (codePoint == JSON_EOF) [[unlikely]]
 						{
 							throw std::runtime_error("json_deserialize_string_truncated");
 						}
@@ -1290,14 +1376,14 @@ namespace JSON
 							}
 								if (codePoint == 'u' && lastCharWasAntislash) [[unlikely]]
 								{
-									if (value) [[likely]]
+									if (dstValue) [[likely]]
 									{
-										serializeUnicodeChar(*value, codePointToUnicode(codePoint, JSON_DEFAULT_ENCODING), JSON_DEFAULT_ENCODING);
+										serializeCodePointChar(*dstValue, codePoint, options.memberEncoding);
 									}
-									for (int i = 0; i < 4; i++)
+									for (int32_t i = 0; i < 4; i++)
 									{
-										JSON_READ_CHAR(stream, codePoint, options.encoding);
-										if (codePoint == EOF) [[unlikely]]
+										readChar(srcStream, codePoint, options.jsonEncoding);
+										if (codePoint == JSON_EOF) [[unlikely]]
 										{
 											throw std::runtime_error("json_deserialize_string_truncated");
 										}
@@ -1305,9 +1391,9 @@ namespace JSON
 											{
 												throw std::runtime_error("json_deserialize_string_badunicodechar");
 											}
-												if (value) [[likely]]
+												if (dstValue) [[likely]]
 												{
-													serializeUnicodeChar(*value, codePointToUnicode(codePoint, JSON_DEFAULT_ENCODING), JSON_DEFAULT_ENCODING);
+													serializeCodePointChar(*dstValue, codePoint, options.memberEncoding);
 												}
 											continue;
 									}
@@ -1320,19 +1406,19 @@ namespace JSON
 									{
 										lastCharWasAntislash = false;
 									}
-										if (value) [[likely]]
+										if (dstValue) [[likely]]
 										{
-											serializeUnicodeChar(*value, codePointToUnicode(codePoint, JSON_DEFAULT_ENCODING), JSON_DEFAULT_ENCODING);
+											serializeCodePointChar(*dstValue, codePoint, options.memberEncoding);
 										}
 					}
 	}
 
-	void deserializeValue(std::istream& stream, std::wstring* value, Options& options)
+	void deserializeValue(std::istream& srcStream, std::wstring* dstValue, const Options& options)
 	{
-		int32_t codePoint = 0;
+		uint32_t codePoint = 0;
 		bool lastCharWasAntislash = false;
-		JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-		if (codePoint == EOF) [[unlikely]]
+		readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
+		if (codePoint == JSON_EOF) [[unlikely]]
 		{
 			throw std::runtime_error("json_deserialize_wstring_truncated");
 		}
@@ -1340,14 +1426,14 @@ namespace JSON
 			{
 				throw std::runtime_error("json_deserialize_wstring_notastring");
 			}
-				if (value) [[likely]]
+				if (dstValue && !dstValue->empty()) [[unlikely]]
 				{
-					value->clear();
+					dstValue->clear();
 				}
 					while (true)
 					{
-						JSON_READ_CHAR(stream, codePoint, options.encoding);
-						if (codePoint == EOF) [[unlikely]]
+						readChar(srcStream, codePoint, options.jsonEncoding);
+						if (codePoint == JSON_EOF) [[unlikely]]
 						{
 							throw std::runtime_error("json_deserialize_wstring_truncated");
 						}
@@ -1357,14 +1443,14 @@ namespace JSON
 							}
 								if (codePoint == 'u' && lastCharWasAntislash) [[unlikely]]
 								{
-									if (value) [[likely]]
+									if (dstValue) [[likely]]
 									{
-										serializeUnicodeChar(*value, codePointToUnicode(codePoint, JSON_DEFAULT_ENCODING_WSTRING), JSON_DEFAULT_ENCODING_WSTRING);
+										serializeCodePointChar(*dstValue, codePoint, options.memberEncoding);
 									}
-									for (int i = 0; i < 4; i++)
+									for (int32_t i = 0; i < 4; i++)
 									{
-										JSON_READ_CHAR(stream, codePoint, options.encoding);
-										if (codePoint == EOF) [[unlikely]]
+										readChar(srcStream, codePoint, options.jsonEncoding);
+										if (codePoint == JSON_EOF) [[unlikely]]
 										{
 											throw std::runtime_error("json_deserialize_wstring_truncated");
 										}
@@ -1372,9 +1458,9 @@ namespace JSON
 											{
 												throw std::runtime_error("json_deserialize_wstring_badunicodechar");
 											}
-												if (value) [[likely]]
+												if (dstValue) [[likely]]
 												{
-													serializeUnicodeChar(*value, codePointToUnicode(codePoint, JSON_DEFAULT_ENCODING_WSTRING), JSON_DEFAULT_ENCODING_WSTRING);
+													serializeCodePointChar(*dstValue, codePoint, options.memberEncoding);
 												}
 											continue;
 									}
@@ -1387,33 +1473,33 @@ namespace JSON
 									{
 										lastCharWasAntislash = false;
 									}
-										if (value) [[unlikely]]
+										if (dstValue) [[unlikely]]
 										{
-											serializeUnicodeChar(*value, codePointToUnicode(codePoint, JSON_DEFAULT_ENCODING_WSTRING), JSON_DEFAULT_ENCODING_WSTRING);
+											serializeCodePointChar(*dstValue, codePoint, options.memberEncoding);
 										}
 					}
 	}
 
-	void deserializeValueNumberAsString(std::istream& stream, std::string* value, Options& options)
+	void deserializeValueNumberAsString(std::istream& srcStream, std::string* dstValue, const Options& options)
 	{
-		int32_t codePoint = 0;
+		uint32_t codePoint = 0;
 		bool first = true;
 		bool comma = false;
 		bool e = false;
 		bool plus = false;
 		bool lastCharWasNumber = false;
-		int bytesCount = 0;
+		int32_t bytesCount = 0;
 		while (true)
 		{
 			if (!first) [[likely]]
 			{
-				bytesCount = JSON_READ_CHAR(stream, codePoint, options.encoding);
+				bytesCount = readChar(srcStream, codePoint, options.jsonEncoding);
 			}
 			else [[unlikely]]
 			{
-				bytesCount = JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+				bytesCount = readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 			}
-				if (codePoint == EOF) [[unlikely]]
+				if (codePoint == JSON_EOF) [[unlikely]]
 				{
 					if (!lastCharWasNumber) [[unlikely]]
 					{
@@ -1454,177 +1540,177 @@ namespace JSON
 					}
 					else [[unlikely]]
 					{
-						JSON_UNGET(stream, bytesCount);
+						JSON_UNGET(srcStream, bytesCount);
 						break;
 					}
-						if (value) [[likely]]
+						if (dstValue) [[likely]]
 						{
-							*value += static_cast<char>(codePoint);
+							*dstValue += static_cast<char>(codePoint);
 						}
 					first = false;
 		}
 	}
 
-	void deserializeValue(const Value& value, Value* value2)
+	void deserializeValue(const Value& srcValue, Value* srcValue2, const Options&)
 	{
-		*value2 = value;
+		*srcValue2 = srcValue;
 	}
 
-	void deserializeValue(const Value& value, bool* boolean)
+	void deserializeValue(const Value& srcValue, bool* dstBoolean, const Options&)
 	{
-		if (value == Type::Boolean) [[likely]]
+		if (srcValue == Type::Boolean) [[likely]]
 		{
-			*boolean = (*value.ptrBoolean);
+			*dstBoolean = *srcValue.ptrBoolean;
 			return;
 		}
 		throw std::runtime_error("json_deserialize_boolean_badtype");
 	}
 
-	void deserializeValue(const Value& value, int8_t* number)
+	void deserializeValue(const Value& srcValue, int8_t* dstNumber, const Options&)
 	{
-		if (value == Type::NumberI) [[likely]]
+		if (srcValue == Type::NumberI) [[likely]]
 		{
-			*number = static_cast<int8_t>(*value.ptrNumberI);
+			*dstNumber = static_cast<int8_t>(*srcValue.ptrNumberI);
 			return;
 		}
-		else if (value == Type::NumberU) [[unlikely]]
+		else if (srcValue == Type::NumberU) [[unlikely]]
 		{
-			*number = static_cast<int8_t>(*value.ptrNumberU);
+			*dstNumber = static_cast<int8_t>(*srcValue.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_int8_badtype");
 	}
 
-	void deserializeValue(const Value& value, int16_t* number)
+	void deserializeValue(const Value& srcValue, int16_t* dstNumber, const Options&)
 	{
-		if (value == Type::NumberI) [[likely]]
+		if (srcValue == Type::NumberI) [[likely]]
 		{
-			*number = static_cast<int16_t>(*value.ptrNumberI);
+			*dstNumber = static_cast<int16_t>(*srcValue.ptrNumberI);
 			return;
 		}
-		else if (value == Type::NumberU) [[unlikely]]
+		else if (srcValue == Type::NumberU) [[unlikely]]
 		{
-			*number = static_cast<int16_t>(*value.ptrNumberU);
+			*dstNumber = static_cast<int16_t>(*srcValue.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_int16_badtype");
 	}
 
-	void deserializeValue(const Value& value, int32_t* number)
+	void deserializeValue(const Value& srcValue, int32_t* dstNumber, const Options&)
 	{
-		if (value == Type::NumberI) [[likely]]
+		if (srcValue == Type::NumberI) [[likely]]
 		{
-			*number = static_cast<int32_t>(*value.ptrNumberI);
+			*dstNumber = static_cast<int32_t>(*srcValue.ptrNumberI);
 			return;
 		}
-		else if (value == Type::NumberU) [[unlikely]]
+		else if (srcValue == Type::NumberU) [[unlikely]]
 		{
-			*number = static_cast<int32_t>(*value.ptrNumberU);
+			*dstNumber = static_cast<int32_t>(*srcValue.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_int32_badtype");
 	}
 
-	void deserializeValue(const Value& value, int64_t* number)
+	void deserializeValue(const Value& srcValue, int64_t* dstNumber, const Options&)
 	{
-		if (value == Type::NumberI) [[likely]]
+		if (srcValue == Type::NumberI) [[likely]]
 		{
-			*number = static_cast<int64_t>(*value.ptrNumberI);
+			*dstNumber = static_cast<int64_t>(*srcValue.ptrNumberI);
 			return;
 		}
-		else if (value == Type::NumberU) [[unlikely]]
+		else if (srcValue == Type::NumberU) [[unlikely]]
 		{
-			*number = static_cast<int64_t>(*value.ptrNumberU);
+			*dstNumber = static_cast<int64_t>(*srcValue.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_int64_badtype");
 	}
 
-	void deserializeValue(const Value& value, uint8_t* number)
+	void deserializeValue(const Value& srcValue, uint8_t* dstNumber, const Options&)
 	{
-		if (value == Type::NumberU) [[likely]]
+		if (srcValue == Type::NumberU) [[likely]]
 		{
-			*number = static_cast<uint8_t>(*value.ptrNumberU);
+			*dstNumber = static_cast<uint8_t>(*srcValue.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_uint8_badtype");
 	}
 
-	void deserializeValue(const Value& value, uint16_t* number)
+	void deserializeValue(const Value& srcValue, uint16_t* dstNumber, const Options&)
 	{
-		if (value == Type::NumberU) [[likely]]
+		if (srcValue == Type::NumberU) [[likely]]
 		{
-			*number = static_cast<uint16_t>(*value.ptrNumberU);
+			*dstNumber = static_cast<uint16_t>(*srcValue.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_uint16_badtype");
 	}
 
-	void deserializeValue(const Value& value, uint32_t* number)
+	void deserializeValue(const Value& srcValue, uint32_t* dstNumber, const Options&)
 	{
-		if (value == Type::NumberU) [[likely]]
+		if (srcValue == Type::NumberU) [[likely]]
 		{
-			*number = static_cast<uint32_t>(*value.ptrNumberU);
+			*dstNumber = static_cast<uint32_t>(*srcValue.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_uint32_badtype");
 	}
 
-	void deserializeValue(const Value& value, uint64_t* number)
+	void deserializeValue(const Value& srcValue, uint64_t* dstNumber, const Options&)
 	{
-		if (value == Type::NumberU) [[likely]]
+		if (srcValue == Type::NumberU) [[likely]]
 		{
-			*number = static_cast<uint64_t>(*value.ptrNumberU);
+			*dstNumber = static_cast<uint64_t>(*srcValue.ptrNumberU);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_uint64_badtype");
 	}
 
-	void deserializeValue(const Value& value, float* number)
+	void deserializeValue(const Value& srcValue, float* dstNumber, const Options&)
 	{
-		if (value == Type::NumberF) [[likely]]
+		if (srcValue == Type::NumberF) [[likely]]
 		{
-			*number = (float)(*value.ptrNumberF);
+			*dstNumber = static_cast<float>(*srcValue.ptrNumberF);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_float_badtype");
 	}
 
-	void deserializeValue(const Value& value, double* number)
+	void deserializeValue(const Value& srcValue, double* dstNumber, const Options&)
 	{
-		if (value == Type::NumberF) [[likely]]
+		if (srcValue == Type::NumberF) [[likely]]
 		{
-			*number = (double)(*value.ptrNumberF);
+			*dstNumber = static_cast<double>(*srcValue.ptrNumberF);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_double_badtype");
 	}
 
-	void deserializeValue(const Value& value, long double* number)
+	void deserializeValue(const Value& srcValue, long double* dstNumber, const Options&)
 	{
-		if (value == Type::NumberF) [[likely]]
+		if (srcValue == Type::NumberF) [[likely]]
 		{
-			*number = (*value.ptrNumberF);
+			*dstNumber = *srcValue.ptrNumberF;
 			return;
 		}
 		throw std::runtime_error("json_deserialize_longdouble_badtype");
 	}
 
-	void deserializeValue(const Value& value, std::string* string)
+	void deserializeValue(const Value& srcValue, std::string* dstString, const Options& options)
 	{
-		if (value == Type::String) [[likely]]
+		if (srcValue == Type::String) [[likely]]
 		{
-			*string = *value.ptrString;
+			convert(*dstString, *srcValue.ptrString, options.memberEncoding, options.jsonEncoding);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_string_badtype");
 	}
 
-	void deserializeValue(const Value& value, std::wstring* string)
+	void deserializeValue(const Value& srcValue, std::wstring* dstString, const Options& options)
 	{
-		if (value == Type::String) [[likely]]
+		if (srcValue == Type::String) [[likely]]
 		{
-			utf8ToUtf16(*string, *value.ptrString);
+			convert(*dstString, *srcValue.ptrString, options.memberEncoding, options.memberEncoding);
 			return;
 		}
 		throw std::runtime_error("json_deserialize_string_badtype");
@@ -1633,16 +1719,16 @@ namespace JSON
 #pragma endregion
 }
 
-std::istream& operator>>(std::istream& stream, JSON::Field& field)
+std::istream& operator>>(std::istream& srcStream, JSON::Field& dstField)
 {
-	stream >> field.name;
-	return stream;
+	srcStream >> dstField.name;
+	return srcStream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const JSON::Field& field)
+std::ostream& operator<<(std::ostream& dstStream, const JSON::Field& srcField)
 {
-	stream << field.name;
-	return stream;
+	dstStream << srcField.name;
+	return dstStream;
 }
 
 #pragma GCC diagnostic pop

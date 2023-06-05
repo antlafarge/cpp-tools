@@ -55,7 +55,7 @@ public:
 		return *this;
 	}
 
-	Key& operator=(const int otherValue)
+	Key& operator=(const int32_t otherValue)
 	{
 		_value = otherValue;
 		return *this;
@@ -103,7 +103,7 @@ private:
 
 std::istream& operator>>(std::istream& stream, Key& key)
 {
-	int value;
+	int32_t value;
 	stream >> value;
 	key = value;
 	return stream;
@@ -117,14 +117,14 @@ std::ostream& operator<<(std::ostream& stream, const Key& key)
 namespace JSON
 {
 	template<std::size_t TBitsetSize>
-	void serializeValue(std::ostream& stream, const std::bitset<TBitsetSize>* value, Options& options)
+	void serializeValue(std::ostream& stream, const std::bitset<TBitsetSize>* value, const Options& options)
 	{
 		std::string value2 = value->to_string();
 		serializeValue(stream, &value2, options);
 	}
 
 	template<std::size_t TBitsetSize>
-	void deserializeValue(std::istream& stream, std::bitset<TBitsetSize>* value, Options& options)
+	void deserializeValue(std::istream& stream, std::bitset<TBitsetSize>* value, const Options& options)
 	{
 		if (value != nullptr)
 		{
@@ -162,7 +162,7 @@ bool operator==(const std::priority_queue<TValue>& left, const std::priority_que
 }
 
 template<class TValue>
-void test(const std::string& title, const TValue& value1)
+void testJson(const std::string& title, const TValue& value1)
 {
 	std::cout << title << std::endl;
 	std::string json = JSON::serialize(value1);
@@ -170,8 +170,7 @@ void test(const std::string& title, const TValue& value1)
 	TValue value2;
 	JSON::deserialize(json, value2);
 	bool passed = (value1 == value2);
-	std::cout << (passed ? "PASSED" : "FAILED") << std::endl
-		<< std::endl;
+	std::cout << (passed ? "PASSED" : "FAILED") << std::endl << std::endl;
 	assert(passed);
 }
 
@@ -181,7 +180,7 @@ struct SampleObject
 
 	SampleObject() = default;
 
-	SampleObject(int content)
+	SampleObject(int32_t content)
 		: sampleField(static_cast<uint8_t>(content))
 	{
 	}
@@ -369,12 +368,12 @@ struct DoubleParts
 #endif
 };
 
-void testUnicode(int32_t codePoint)
+void testUnicodeChar(uint32_t codePoint)
 {
 	{
 		std::cout << "CodePoint :\t0x" << std::uppercase << std::setfill('0') << std::hex << std::setw(8) << codePoint << " [ ";
 		uint8_t* byteArray = (uint8_t*)&codePoint;
-		for (int i = 0; i < 4; i++)
+		for (int32_t i = 0; i < 4; i++)
 		{
 			uint8_t byte = byteArray[i];
 			std::cout << std::setw(2) << static_cast<uint16_t>(byte) << ' ';
@@ -383,47 +382,47 @@ void testUnicode(int32_t codePoint)
 	}
 
 	{
-		int32_t unicode = JSON::codePointToUtf8(codePoint);
+		uint32_t unicode = JSON::codePointToUtf8(codePoint);
 		std::string bytesStr;
-		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF8);
+		JSON::serializeCodePointChar(bytesStr, codePoint, JSON::Encoding::UTF8);
 		std::cout << "UTF-8 :\t\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
-		int32_t codePoint2 = JSON::utf8ToCodePoint(unicode);
+		uint32_t codePoint2 = JSON::utf8ToCodePoint(unicode);
 		assert(codePoint == codePoint2);
 	}
 
 	{
-		int32_t unicode = JSON::codePointToUtf16(codePoint, JSON::Encoding::BigEndian);
+		uint32_t unicode = JSON::codePointToUtf16(codePoint, JSON::Encoding::BigEndian);
 		std::string bytesStr;
-		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF16 | JSON::Encoding::BigEndian);
+		JSON::serializeCodePointChar(bytesStr, codePoint, JSON::Encoding::UTF16BE);
 		std::cout << "UTF-16BE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
-		int32_t codePoint2 = JSON::utf16ToCodePoint(unicode, JSON::Encoding::BigEndian);
+		uint32_t codePoint2 = JSON::utf16ToCodePoint(unicode, JSON::Encoding::BigEndian);
 		assert(codePoint == codePoint2);
 	}
 
 	{
-		int32_t unicode = JSON::codePointToUtf16(codePoint, JSON::Encoding::LittleEndian);
+		uint32_t unicode = JSON::codePointToUtf16(codePoint, JSON::Encoding::LittleEndian);
 		std::string bytesStr;
-		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian);
+		JSON::serializeCodePointChar(bytesStr, codePoint, JSON::Encoding::UTF16LE);
 		std::cout << "UTF-16LE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
-		int32_t codePoint2 = JSON::utf16ToCodePoint(unicode, JSON::Encoding::LittleEndian);
+		uint32_t codePoint2 = JSON::utf16ToCodePoint(unicode, JSON::Encoding::LittleEndian);
 		assert(codePoint == codePoint2);
 	}
 
 	{
-		int32_t unicode = JSON::codePointToUtf32(codePoint, JSON::Encoding::BigEndian);
+		uint32_t unicode = JSON::codePointToUtf32(codePoint, JSON::Encoding::BigEndian);
 		std::string bytesStr;
-		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF32 | JSON::Encoding::BigEndian);
+		JSON::serializeCodePointChar(bytesStr, codePoint, JSON::Encoding::UTF32BE);
 		std::cout << "UTF-32BE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
-		int32_t codePoint2 = JSON::utf32ToCodePoint(unicode, JSON::Encoding::BigEndian);
+		uint32_t codePoint2 = JSON::utf32ToCodePoint(unicode, JSON::Encoding::BigEndian);
 		assert(codePoint == codePoint2);
 	}
 
 	{
-		int32_t unicode = JSON::codePointToUtf32(codePoint, JSON::Encoding::LittleEndian);
+		uint32_t unicode = JSON::codePointToUtf32(codePoint, JSON::Encoding::LittleEndian);
 		std::string bytesStr;
-		JSON::serializeUnicodeChar(bytesStr, unicode, JSON::Encoding::UTF32 | JSON::Encoding::LittleEndian);
+		JSON::serializeCodePointChar(bytesStr, codePoint, JSON::Encoding::UTF32LE);
 		std::cout << "UTF-32LE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
-		int32_t codePoint2 = JSON::utf32ToCodePoint(unicode, JSON::Encoding::LittleEndian);
+		uint32_t codePoint2 = JSON::utf32ToCodePoint(unicode, JSON::Encoding::LittleEndian);
 		assert(codePoint == codePoint2);
 	}
 
@@ -447,34 +446,31 @@ struct TestJsonUtf8bom
 struct TestJsonUtf16BE
 {
 	std::string myStr;
-
-	JSON(JSON::Field("UTF16BE", (JSON::Encoding::UTF16 | JSON::Encoding::BigEndian)), myStr);
+	
+	JSON(JSON::Field("UTF16BE", JSON::Encoding::UTF16BE), myStr);
 };
 
 struct TestJsonUtf16LE
 {
 	std::string myStr;
 
-	JSON(JSON::Field("UTF16LE", (JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian)), myStr);
+	JSON(JSON::Field("UTF16LE", JSON::Encoding::UTF16LE), myStr);
 };
 
 template<class T>
-void test(const std::string& sourceFileName, const std::string& targetFileName, JSON::Encoding writeEncoding = JSON::Encoding::None)
+void testJson(const std::string& sourceFileName, const std::string& targetFileName, JSON::Encoding writeEncoding = JSON::Encoding::None)
 {
 	std::cout << sourceFileName << " => " << targetFileName << std::endl;
 	T object;
 	JSON::deserialize(std::ifstream(sourceFileName), object);
 	JSON::serialize(std::ofstream(targetFileName), object, writeEncoding);
 	bool valid = JSON::isValid(std::ifstream(targetFileName));
-	std::cout << (valid ? "PASSED" : "FAILED") << std::endl
-		<< std::endl;
+	std::cout << (valid ? "PASSED" : "FAILED") << std::endl << std::endl;
 	assert(valid);
 }
 
-int main()
+void testOptional()
 {
-	// OPTIONAL
-
 	std::cout << "optional" << std::endl;
 
 	std::optional<int> opt;
@@ -511,48 +507,80 @@ int main()
 
 	std::cout << "PASSED" << std::endl
 		<< std::endl;
+}
 
-	// BASIC TYPES
+void testUnicode()
+{
+	testUnicodeChar(0x00000041);
+	testUnicodeChar(0x000000D8);
+	testUnicodeChar(0x00000AFF);
+	testUnicodeChar(0x0001F408);
 
-	test("false", false);
-	test("true", true);
-	test("INT8_MIN", INT8_MIN);
-	test("INT16_MIN", INT16_MIN);
-	test("INT32_MIN", INT32_MIN);
-	test("INT64_MIN", INT64_MIN);
-	test("UINT8_MAX", UINT8_MAX);
-	test("UINT16_MAX", UINT16_MAX);
-	test("UINT32_MAX", UINT32_MAX);
-	test("UINT64_MAX", UINT64_MAX);
-	test("float", (float)PI);
-	test("double", (double)PI);
-	test("long double", PI);
-	test("-0.1e-200", -1.0e-200);
-	test("optional<bool>()", std::optional<bool>());
-	test("std::optional<bool>(false)", std::optional<bool>(false));
-	test("std::optional<bool>(true)", std::optional<bool>(true));
-	test("std::optional<float>((float)PI)", std::optional<float>((float)PI));
-	test("std::optional<std::string>(\"STRING\")", std::optional<std::string>("STRING"));
-	test("std::optional<std::wstring>(L\"WSTRING\")", std::optional<std::wstring>(L"WSTRING"));
-	test("std::array", std::array<uint32_t, 3>{ 2, 1, 0 });
-	test("std::vector", std::vector<uint32_t>{ 2, 1, 0 });
-	test("std::deque", std::deque<uint32_t>{ 2, 1, 0 });
-	test("std::forward_list", std::forward_list<uint32_t>{ 2, 1, 0 });
-	test("std::list", std::list<uint32_t>{ 2, 1, 0 });
-	test("std::set", std::set<uint32_t>{ 2, 1, 0 });
-	test("std::map<string, uint>", std::map<std::string, uint32_t>{ { "a", 0}, { "b", 1 } });
-	test("std::map<uint32_t, uint32_t>", std::map<uint32_t, uint32_t>{ { 0, 1}, { 2, 3 } });
-	test("std::map<Key, uint32_t>", std::map<Key, uint32_t>{ { Key(13), 1}, { Key(37), 3 } });
-	test("std::multiset", std::multiset<uint32_t>{ 2, 1, 0 });
-	test("std::multimap<string, uint>", std::multimap<std::string, uint32_t>{ { "a", 0}, { "b", 1 } });
-	test("std::unordered_set", std::unordered_set<uint32_t>{ 2, 1, 0 });
-	test("std::unordered_map<std::string, uint32_t>", std::unordered_map<std::string, uint32_t>{ { "a", 0}, { "b", 1 } });
-	test("std::unordered_multiset", std::unordered_multiset<uint32_t>{ 2, 1, 0 });
-	test("std::unordered_multimap<std::string, uint32_t>", std::unordered_multimap<std::string, uint32_t>{ { "a", 0}, { "b", 1 } });
-	test("std::stack", std::stack<uint32_t>({ 2, 1, 0 }));
-	test("std::queue", std::queue<uint32_t>({ 2, 1, 0 }));
-	test("std::priority_queue", std::priority_queue<uint32_t>(std::less<uint32_t>(), { 2, 1, 0 }));
+	try
+	{
+		testUnicodeChar(0xD800);
+	}
+	catch (const std::exception& ex)
+	{
+		std::cout << "Exception as expected : " << ex.what() << std::endl
+			<< std::endl;
+	}
 
+	try
+	{
+		testUnicodeChar(0xFFFE);
+	}
+	catch (const std::exception& ex)
+	{
+		std::cout << "Exception as expected : " << ex.what() << std::endl
+			<< std::endl;
+	}
+}
+
+void testJsonBasic()
+{
+	testJson("false", false);
+	testJson("true", true);
+	testJson("INT8_MIN", INT8_MIN);
+	testJson("INT16_MIN", INT16_MIN);
+	testJson("INT32_MIN", INT32_MIN);
+	testJson("INT64_MIN", INT64_MIN);
+	testJson("UINT8_MAX", UINT8_MAX);
+	testJson("UINT16_MAX", UINT16_MAX);
+	testJson("UINT32_MAX", UINT32_MAX);
+	testJson("UINT64_MAX", UINT64_MAX);
+	testJson("float", (float)PI);
+	testJson("double", (double)PI);
+	testJson("long double", PI);
+	testJson("-0.1e-200", -1.0e-200);
+	testJson("optional<bool>()", std::optional<bool>());
+	testJson("std::optional<bool>(false)", std::optional<bool>(false));
+	testJson("std::optional<bool>(true)", std::optional<bool>(true));
+	testJson("std::optional<float>((float)PI)", std::optional<float>((float)PI));
+	testJson("std::optional<std::string>(\"STRING\")", std::optional<std::string>("STRING"));
+	testJson("std::optional<std::wstring>(L\"WSTRING\")", std::optional<std::wstring>(L"WSTRING"));
+	testJson("std::array", std::array<uint32_t, 3>{ 2, 1, 0 });
+	testJson("std::vector", std::vector<uint32_t>{ 2, 1, 0 });
+	testJson("std::deque", std::deque<uint32_t>{ 2, 1, 0 });
+	testJson("std::forward_list", std::forward_list<uint32_t>{ 2, 1, 0 });
+	testJson("std::list", std::list<uint32_t>{ 2, 1, 0 });
+	testJson("std::set", std::set<uint32_t>{ 2, 1, 0 });
+	testJson("std::map<string, uint>", std::map<std::string, uint32_t>{ { "a", 0}, { "b", 1 } });
+	testJson("std::map<uint32_t, uint32_t>", std::map<uint32_t, uint32_t>{ { 0, 1}, { 2, 3 } });
+	testJson("std::map<Key, uint32_t>", std::map<Key, uint32_t>{ { Key(13), 1}, { Key(37), 3 } });
+	testJson("std::multiset", std::multiset<uint32_t>{ 2, 1, 0 });
+	testJson("std::multimap<string, uint>", std::multimap<std::string, uint32_t>{ { "a", 0}, { "b", 1 } });
+	testJson("std::unordered_set", std::unordered_set<uint32_t>{ 2, 1, 0 });
+	testJson("std::unordered_map<std::string, uint32_t>", std::unordered_map<std::string, uint32_t>{ { "a", 0}, { "b", 1 } });
+	testJson("std::unordered_multiset", std::unordered_multiset<uint32_t>{ 2, 1, 0 });
+	testJson("std::unordered_multimap<std::string, uint32_t>", std::unordered_multimap<std::string, uint32_t>{ { "a", 0}, { "b", 1 } });
+	testJson("std::stack", std::stack<uint32_t>({ 2, 1, 0 }));
+	testJson("std::queue", std::queue<uint32_t>({ 2, 1, 0 }));
+	testJson("std::priority_queue", std::priority_queue<uint32_t>(std::less<uint32_t>(), { 2, 1, 0 }));
+}
+
+void testJsonFloat()
+{
 	std::cout << "sizeof(float)=" << sizeof(float) << std::endl;
 	std::cout << "sizeof(double)=" << sizeof(double) << std::endl;
 	std::cout << "sizeof(long double)=" << sizeof(long double) << std::endl;
@@ -569,7 +597,7 @@ int main()
 			std::ostringstream stream;
 			float number = *(float*)&fl;
 			stream << "JSON::Value(" << number << ") exponent=0b" << std::bitset<8>(fl.exponent);
-			test(stream.str(), JSON::Value(number));
+			testJson(stream.str(), JSON::Value(number));
 		}
 
 		{
@@ -577,7 +605,7 @@ int main()
 			std::ostringstream stream;
 			float number = *(float*)&fl;
 			stream << "JSON::Value(" << number << ") exponent=0b" << std::bitset<8>(fl.exponent);
-			test(stream.str(), JSON::Value(number));
+			testJson(stream.str(), JSON::Value(number));
 		}
 	}
 
@@ -596,7 +624,7 @@ int main()
 			std::ostringstream stream;
 			double number = *(double*)&db;
 			stream << "JSON::Value(" << number << "L) exponent=0b" << std::bitset<11>(db.exponent);
-			test(stream.str(), JSON::Value(number));
+			testJson(stream.str(), JSON::Value(number));
 		}
 
 		{
@@ -604,16 +632,18 @@ int main()
 			std::ostringstream stream;
 			double number = *(double*)&db;
 			stream << "JSON::Value(" << number << "L) exponent=0b" << std::bitset<11>(db.exponent);
-			test(stream.str(), JSON::Value(number));
+			testJson(stream.str(), JSON::Value(number));
 		}
 	}
+}
 
-	// CUSTOM DE-SERIALIZATION
+void testJsonCustomDeSerialization()
+{
+	testJson("std::bitset", std::bitset<8>{ 0xA });
+}
 
-	test("std::bitset", std::bitset<8>{ 0xA });
-
-	// CUSTOM CLASS
-
+void testJsonCustomClass()
+{
 	GlobalData data{
 		{
 			true,
@@ -653,10 +683,11 @@ int main()
 		}
 	};
 
-	test("GlobalData", data);
+	testJson("GlobalData", data);
+}
 
-	// VALUE
-
+void testJsonValue()
+{
 	JSON::Value jsValue = JSON::Value::createObject();
 	jsValue.getObject()["A"] = JSON::Value();
 	jsValue.getObject()["B"] = JSON::Value(false);
@@ -673,14 +704,16 @@ int main()
 	jsValue.getObject()["M"] = JSON::Value((double)PI);
 	jsValue.getObject()["N"] = JSON::Value(PI);
 	jsValue.getObject()["O"] = JSON::Value("STRING_2");
+	jsValue.getObject()["O"] = JSON::Value(L"WSTRING_2", JSON::Encoding::UTF16BE);
 	jsValue.getObject()["P"] = JSON::Value::createArray();
 	jsValue.getObject()["P"].getArray().push_back(JSON::Value("value1"));
 	jsValue.getObject()["P"].getArray().push_back(JSON::Value("value2"));
 
-	test("JSON::Value", jsValue);
+	testJson("JSON::Value", jsValue);
+}
 
-	// FILE
-
+void testJsonFile()
+{
 	std::map<std::string, std::string> data2{ { "Field", "Value" } };
 
 	// Write to file
@@ -688,45 +721,23 @@ int main()
 
 	// Read from file
 	JSON::deserialize(std::ifstream("data.json"), data2);
+}
 
-	testUnicode(0x00000041);
-	testUnicode(0x000000D8);
-	testUnicode(0x00000AFF);
-	testUnicode(0x0001F408);
-
-	try
-	{
-		testUnicode(0xD800);
-	}
-	catch (const std::exception& ex)
-	{
-		std::cout << "Exception as expected : " << ex.what() << std::endl
-			<< std::endl;
-	}
-
-	try
-	{
-		testUnicode(0xFFFE);
-	}
-	catch (const std::exception& ex)
-	{
-		std::cout << "Exception as expected : " << ex.what() << std::endl
-			<< std::endl;
-	}
-
+void testJsonUnicode()
+{
 	{
 		std::string strA = "ABC", strC;
 		std::wstring wstrB;
-		JSON::utf8ToUtf16(wstrB, strA, (JSON::Encoding::UTF16 | JSON::Encoding::BigEndian));
-		JSON::utf16ToUtf8(strC, wstrB, (JSON::Encoding::UTF16 | JSON::Encoding::BigEndian));
+		JSON::convert(wstrB, strA, JSON::Encoding::UTF16BE, JSON::Encoding::UTF8);
+		JSON::convert(strC, wstrB, JSON::Encoding::UTF8, JSON::Encoding::UTF16BE);
 		assert(strA == strC);
 	}
 
 	{
 		std::string strA = "ABC", strC;
 		std::wstring wstrB;
-		JSON::utf8ToUtf16(wstrB, strA, (JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian));
-		JSON::utf16ToUtf8(strC, wstrB, (JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian));
+		JSON::convert(wstrB, strA, JSON::Encoding::UTF16LE, JSON::Encoding::UTF8);
+		JSON::convert(strC, wstrB, JSON::Encoding::UTF8, JSON::Encoding::UTF16LE);
 		assert(strA == strC);
 	}
 
@@ -768,7 +779,7 @@ int main()
 		str[6] = uint8_t(0x00);
 		str[7] = uint8_t(0x22);
 		JSON::Value value;
-		JSON::deserialize(str, value, JSON::Options(JSON::Encoding::UTF16 | JSON::Encoding::BigEndian));
+		JSON::deserialize(str, value, JSON::Options(JSON::Encoding::UTF16BE));
 		auto json = JSON::serialize(value);
 		assert(json == catUtf8);
 	}
@@ -786,7 +797,7 @@ int main()
 		str[6] = uint8_t(0x22);
 		str[7] = uint8_t(0x00);
 		JSON::Value value;
-		JSON::deserialize(str, value, (JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian));
+		JSON::deserialize(str, value, (JSON::Encoding::UTF16LE));
 		auto json = JSON::serialize(value);
 		assert(json == catUtf8);
 	}
@@ -808,7 +819,7 @@ int main()
 		str[10] = uint8_t(0x00);
 		str[11] = uint8_t(0x22);
 		JSON::Value value;
-		JSON::deserialize(str, value, (JSON::Encoding::UTF32 | JSON::Encoding::BigEndian));
+		JSON::deserialize(str, value, (JSON::Encoding::UTF32BE));
 		auto json = JSON::serialize(value);
 		assert(json == catUtf8);
 	}
@@ -830,22 +841,35 @@ int main()
 		str[10] = uint8_t(0x00);
 		str[11] = uint8_t(0x00);
 		JSON::Value value;
-		JSON::deserialize(str, value, (JSON::Encoding::UTF32 | JSON::Encoding::LittleEndian));
+		JSON::deserialize(str, value, (JSON::Encoding::UTF32LE));
 		auto json = JSON::serialize(value);
 		assert(json == catUtf8);
 	}
 
 	// JSON::Value testJsonUtf8(JSON::Encoding::UTF8);
-	test<TestJsonUtf8>("UTF8.json", "UTF8_2.json", JSON::Encoding::UTF8);
+	testJson<TestJsonUtf8>("UTF8.json", "UTF8_2.json", JSON::Encoding::UTF8);
 
 	// JSON::Value testJsonUtf8Bom(JSON::Encoding::UTF8);
-	test<TestJsonUtf8bom>("UTF8BOM.json", "UTF8BOM_2.json", JSON::Encoding::UTF8);
+	testJson<TestJsonUtf8bom>("UTF8BOM.json", "UTF8BOM_2.json", JSON::Encoding::UTF8);
+	
+	// JSON::Value testJsonUtf16Be(JSON::Encoding::UTF16BE);
+	testJson<TestJsonUtf16BE>("UTF16BE.json", "UTF16BE_2.json", JSON::Encoding::UTF16BE);
 
-	// JSON::Value testJsonUtf16Be(JSON::Encoding::UTF16 | JSON::Encoding::BigEndian);
-	test<TestJsonUtf16BE>("UTF16BE.json", "UTF16BE_2.json", (JSON::Encoding::UTF16 | JSON::Encoding::BigEndian));
+	// JSON::Value testJsonUtf16Le(JSON::Encoding::UTF16LE);
+	testJson<TestJsonUtf16LE>("UTF16LE.json", "UTF16LE_2.json", JSON::Encoding::UTF16LE);
+}
 
-	// JSON::Value testJsonUtf16Le(JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian);
-	test<TestJsonUtf16LE>("UTF16LE.json", "UTF16LE_2.json", (JSON::Encoding::UTF16 | JSON::Encoding::LittleEndian));
+int main()
+{
+	testOptional();
+	testUnicode();
+	testJsonBasic();
+	testJsonFloat();
+	testJsonCustomDeSerialization();
+	testJsonCustomClass();
+	testJsonValue();
+	testJsonFile();
+	testJsonUnicode();
 
 	std::cout << "ALL TESTS PASSED" << std::endl;
 

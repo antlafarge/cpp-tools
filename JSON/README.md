@@ -127,7 +127,7 @@ If you want to keep dynamic JSON data in your program, you can use the class `JS
 ```cpp
 auto jsValue = JSON::Value::createObject();
 jsValue.getObject()["PI"] = JSON::Value(3.14159);
-std::streamsize precision = 3;
+int32_t precision = 3;
 std::string json = JSON::serialize(jsValue, JSON::Options(precision));
 
 std::cout << json << std::endl; // {"PI":3.14}

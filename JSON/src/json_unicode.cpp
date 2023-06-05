@@ -20,9 +20,9 @@ namespace JSON
 		return static_cast<Encoding>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
 	}
 
-	bool hasFlags(Encoding encoding, Encoding flags)
+	bool hasFlags(Encoding encoding, Encoding flags, bool acceptUnknown)
 	{
-		return (encoding & flags) == flags;
+		return ((encoding & flags) == flags) || (acceptUnknown && encoding == Encoding::Unknown);
 	}
 
 	uint32_t codePointToUtf8(uint32_t codePoint)
@@ -264,133 +264,439 @@ namespace JSON
 
 	uint32_t codePointToUnicode(uint32_t codePoint, Encoding encoding)
 	{
-		if (encoding == Encoding::None) [[unlikely]]
+		if (encoding <= Encoding::UTF8) [[likely]]
 		{
-			encoding = JSON_DEFAULT_ENCODING;
+			return codePointToUtf8(codePoint);
 		}
-
-			if (hasFlags(encoding, Encoding::UTF8)) [[likely]]
-			{
-				return codePointToUtf8(codePoint);
-			}
-			else if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
-			{
-				return codePointToUtf16(codePoint, encoding);
-			}
-			else if (hasFlags(encoding, Encoding::UTF32)) [[unlikely]]
-			{
-				return codePointToUtf32(codePoint, encoding);
-			}
+		else if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
+		{
+			return codePointToUtf16(codePoint, encoding);
+		}
+		else if (hasFlags(encoding, Encoding::UTF32)) [[unlikely]]
+		{
+			return codePointToUtf32(codePoint, encoding);
+		}
 		return codePoint;
 	}
 
 	uint32_t unicodeToCodePoint(uint32_t unicode, Encoding encoding)
 	{
-		if (encoding == Encoding::None) [[unlikely]]
+		if (encoding <= Encoding::UTF8) [[likely]]
 		{
-			encoding = JSON_DEFAULT_ENCODING;
+			return utf8ToCodePoint(unicode);
 		}
-
-			if (hasFlags(encoding, Encoding::UTF8)) [[likely]]
-			{
-				return utf8ToCodePoint(unicode);
-			}
-			else if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
-			{
-				return utf16ToCodePoint(unicode, encoding);
-			}
-			else if (hasFlags(encoding, Encoding::UTF32)) [[unlikely]]
-			{
-				return utf32ToCodePoint(unicode, encoding);
-			}
+		else if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
+		{
+			return utf16ToCodePoint(unicode, encoding);
+		}
+		else if (hasFlags(encoding, Encoding::UTF32)) [[unlikely]]
+		{
+			return utf32ToCodePoint(unicode, encoding);
+		}
 		return unicode;
 	}
 
-	int readChar(std::istream& stream, int32_t& codePoint, Encoding& encoding)
+	void serializeCodePointChar(std::ostream& dstStream, uint32_t codePoint, Encoding dstEncoding)
 	{
-		int size = 0;
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+		std::cout << std::hex << std::uppercase << std::setfill('0');
+#endif
 
-		if (encoding == Encoding::None) [[unlikely]]
+		uint32_t unicode = codePointToUnicode(codePoint, dstEncoding);
+
+		if (dstEncoding <= Encoding::UTF8 && unicode < 0x80) [[likely]]
 		{
-			size++;
-			switch (stream.get())
+			dstStream << static_cast<uint8_t>(unicode);
+			return;
+		}
+
+		uint8_t* byteArray = (uint8_t*)&unicode;
+		uint8_t byte = 0;
+		bool started = hasFlags(dstEncoding, Encoding::UTF32);
+#if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
+		static const int32_t utf8last = 3;
+		static const int32_t utf16last = 2;
+		for (int32_t i = 0; i < 4; i++)
+#else
+		static const int32_t utf8last = 0;
+		static const int32_t utf16last = 1;
+		for (int32_t i = 3; i >= 0; i--)
+#endif
+		{
+			byte = byteArray[i];
+			if (!started) [[likely]]
 			{
-			case 0x00: [[unlikely]]
-				size++;
-				if (stream.get() == 0x00) [[unlikely]]
+				if (byte) [[unlikely]]
 				{
-					size++;
-					if (stream.get() == 0xFE) [[unlikely]]
+					started = true;
+				}
+				else if (dstEncoding <= Encoding::UTF8) [[likely]]
+				{
+					if (i == utf8last) [[unlikely]]
 					{
-						size++;
-						if (stream.get() == 0xFF) [[unlikely]]
-						{
-							encoding = Encoding::UTF32 | Encoding::BigEndian;
-							break;
-						}
+						started = true;
 					}
 				}
-				encoding = JSON_DEFAULT_ENCODING;
-				JSON_UNGET(stream, size);
-				break;
-			case 0xFE: [[unlikely]]
-				size++;
-				if (stream.get() == 0xFF) [[likely]]
+				else if (hasFlags(dstEncoding, Encoding::UTF16)) [[unlikely]]
 				{
-					encoding = Encoding::UTF16 | Encoding::BigEndian;
-					break;
-				}
-				encoding = JSON_DEFAULT_ENCODING;
-				JSON_UNGET(stream, size);
-				break;
-			case 0xFF: [[unlikely]]
-				size++;
-				if (stream.get() == 0xFE) [[unlikely]]
-				{
-					size = 1;
-					if (stream.get() == 0x00) [[unlikely]]
+					if (i == utf16last) [[unlikely]]
 					{
-						size++;
-						if (stream.get() == 0x00) [[unlikely]]
-						{
-							encoding = Encoding::UTF32 | Encoding::LittleEndian;
-							break;
-						}
+						started = true;
 					}
-					encoding = Encoding::UTF16 | Encoding::LittleEndian;
-					JSON_UNGET(stream, size);
+				}
+				else [[unlikely]]
+				{
+					throw std::invalid_argument("serializeunicodechar_badencoding");
+				}
+			}
+				if (started) [[unlikely]]
+				{
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+					std::cout << std::setw(2) << static_cast<uint16_t>(byte) << ' ';
+#endif
+					dstStream << byte;
+				}
+		}
+	}
+
+	void serializeCodePointChar(std::string& dstString, uint32_t codePoint, Encoding dstEncoding)
+	{
+		std::ostringstream dstStream;
+		serializeCodePointChar(dstStream, codePoint, dstEncoding);
+		dstString += dstStream.str();
+	}
+
+	void serializeCodePointChar(std::wostream& dstStream, uint32_t codePoint, Encoding dstEncoding)
+	{
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+		std::cout << std::hex << std::uppercase << std::setfill('0');
+#endif
+
+		if (dstEncoding == Encoding::Unknown) [[unlikely]]
+		{
+			dstEncoding = JSON_DEFAULT_ENCODING_WSTRING;
+		}
+
+		uint32_t unicode = codePointToUnicode(codePoint, dstEncoding);
+
+		if (dstEncoding == Encoding::UTF8) [[unlikely]]
+		{
+			assert(false); // you should not store an UTF8 string in a wstring/wstream
+
+			uint8_t* byteArray = (uint8_t*)&codePoint;
+			bool started = false;
+#if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
+			const int32_t start = 0, end = 4, increment = 1;
+#else
+			const int32_t start = 3, end = -1, increment = -1;
+#endif
+			for (int32_t i = start; i != end; i += increment)
+			{
+				wchar_t wc = (wchar_t)byteArray[i];
+				if (wc || started || i == (end - increment)) [[unlikely]]
+				{
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+					std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
+					std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
+#endif
+					dstStream << wc;
+					started = true;
+				}
+			}
+		}
+		else if (hasFlags(dstEncoding, Encoding::UTF32)) [[unlikely]]
+		{
+			assert(false); // you should not store an UTF32 string in a wstring/wstream
+
+#if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
+			const int32_t start = 0, end = 2, increment = 1;
+#else
+			const int32_t start = 1, end = -1, increment = -1;
+#endif
+			for (int32_t i = start; i != end; i += increment)
+			{
+				wchar_t wc = ((uint16_t*)&unicode)[i];
+
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+				std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
+				std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
+#endif
+				dstStream << wc;
+			}
+		}
+		// Default UTF16BE
+		else [[likely]]
+		{
+#if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
+			const int32_t start = 0, end = 2, increment = 1;
+#else
+			const int32_t start = 1, end = -1, increment = -1;
+#endif
+			for (int32_t i = start; i != end; i += increment)
+			{
+				wchar_t wc = ((uint16_t*)&unicode)[i];
+
+				if (i == (end - increment) || wc) [[unlikely]]
+				{
+#if defined(JSON_DEBUG) && JSON_DEBUG != false
+					std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
+					std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
+#endif
+					dstStream << wc;
+				}
+			}
+		}
+	}
+
+	void serializeCodePointChar(std::wstring& dstString, uint32_t codePoint, Encoding dstEncoding)
+	{
+		std::wostringstream stream;
+		serializeCodePointChar(stream, codePoint, dstEncoding);
+		dstString += stream.str();
+	}
+
+	void convert(std::ostream& dstStream, std::istream& srcStream, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		if (srcEncoding == dstEncoding) [[likely]]
+		{
+#if defined(JSON_COPY_BUFFER_ON_HEAP) && JSON_COPY_BUFFER_ON_HEAP
+			char* buffer = new char[JSON_COPY_BUFFER_SIZE];
+#else
+			char buffer[JSON_COPY_BUFFER_SIZE];
+#endif
+			std::streamsize bytesReadCount;
+			while (true)
+			{
+				bytesReadCount = srcStream.readsome(static_cast<char*>(buffer), JSON_COPY_BUFFER_SIZE);
+				if (bytesReadCount <= 0)
+				{
 					break;
 				}
-				encoding = JSON_DEFAULT_ENCODING;
-				JSON_UNGET(stream, size);
-				break;
-			case 0xEF: [[unlikely]]
+				dstStream.write(buffer, bytesReadCount);
+			}
+#if defined(JSON_COPY_BUFFER_ON_HEAP) && JSON_COPY_BUFFER_ON_HEAP
+			delete[] buffer;
+#endif
+		}
+		else
+		{
+			convertStream(dstStream, srcStream, dstEncoding, srcEncoding);
+		}
+	}
+
+	void convert(std::ostream& dstStream, std::wistream& srcStream, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		convertStream(dstStream, srcStream, dstEncoding, srcEncoding);
+	}
+
+	void convert(std::wostream& dstStream, std::istream& srcStream, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		convertStream(dstStream, srcStream, dstEncoding, srcEncoding);
+	}
+
+	void convert(std::wostream& dstStream, std::wistream& srcStream, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		convertStream(dstStream, srcStream, dstEncoding, srcEncoding);
+	}
+
+	void convert(std::string& dstString, std::istream& srcStream, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		std::ostringstream dstStream;
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+		dstString = dstStream.str();
+	}
+
+	void convert(std::string& dstString, std::wistream& srcStream, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		std::ostringstream dstStream;
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+		dstString = dstStream.str();
+	}
+
+	void convert(std::wstring& dstString, std::istream& srcStream, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		std::wostringstream dstStream;
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+		dstString = dstStream.str();
+	}
+
+	void convert(std::wstring& dstString, std::wistream& srcStream, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		std::wostringstream dstStream;
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+		dstString = dstStream.str();
+	}
+
+	void convert(std::ostream& dstStream, const std::string& srcString, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		std::istringstream srcStream(srcString);
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+	}
+
+	void convert(std::ostream& dstStream, const std::wstring& srcString, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		std::wistringstream srcStream(srcString);
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+	}
+
+	void convert(std::wostream& dstStream, const std::string& srcString, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		std::istringstream srcStream(srcString);
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+	}
+
+	void convert(std::wostream& dstStream, const std::wstring& srcString, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		std::wistringstream srcStream(srcString);
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+	}
+
+	void convert(std::string& dstString, const std::string& srcString, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		if (dstEncoding == srcEncoding) [[likely]]
+		{
+			dstString = srcString;
+			return;
+		}
+
+		std::ostringstream dstStream;
+		std::istringstream srcStream(srcString);
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+		dstString = dstStream.str();
+	}
+
+	void convert(std::string& dstString, const std::wstring& srcString, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		std::ostringstream dstStream;
+		std::wistringstream srcStream(srcString);
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+		dstString = dstStream.str();
+	}
+
+	void convert(std::wstring& dstString, const std::string& srcString, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		std::wostringstream dstStream;
+		std::istringstream srcStream(srcString);
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+		dstString = dstStream.str();
+	}
+
+	void convert(std::wstring& dstString, const std::wstring& srcString, Encoding dstEncoding, Encoding srcEncoding)
+	{
+		if (dstEncoding == srcEncoding) [[likely]]
+		{
+			dstString = srcString;
+			return;
+		}
+
+		std::wostringstream dstStream;
+		std::wistringstream srcStream(srcString);
+		convert(dstStream, srcStream, dstEncoding, srcEncoding);
+		dstString = dstStream.str();
+	}
+
+	void readBOM(std::istream& srcStream, Encoding& encoding)
+	{
+		encoding = JSON_DEFAULT_ENCODING;
+		int32_t size = 1;
+		switch (srcStream.get())
+		{
+		case 0x00: [[unlikely]]
+			size++;
+			if (srcStream.get() == 0x00) [[unlikely]]
+			{
 				size++;
-				if (stream.get() == 0xBB) [[unlikely]]
+				if (srcStream.get() == 0xFE) [[unlikely]]
 				{
 					size++;
-					if (stream.get() == 0xBF) [[unlikely]]
+					if (srcStream.get() == 0xFF) [[unlikely]]
 					{
-						encoding = Encoding::UTF8;
+						encoding = Encoding::UTF32BE;
+						size = 0;
 						break;
 					}
 				}
-				encoding = JSON_DEFAULT_ENCODING;
-				JSON_UNGET(stream, size);
-				break;
-			default: [[likely]]
-				JSON_UNGET(stream, size);
-				encoding = JSON_DEFAULT_ENCODING;
+			}
+			break;
+		case 0xEF: [[unlikely]]
+			size++;
+			if (srcStream.get() == 0xBB) [[unlikely]]
+			{
+				size++;
+				if (srcStream.get() == 0xBF) [[unlikely]]
+				{
+					encoding = Encoding::UTF8;
+					size = 0;
+					break;
+				}
+			}
+			break;
+		case 0xFE: [[unlikely]]
+			size++;
+			if (srcStream.get() == 0xFF) [[likely]]
+			{
+				encoding = Encoding::UTF16BE;
+				size = 0;
 				break;
 			}
+			break;
+		case 0xFF: [[unlikely]]
+			size++;
+			if (srcStream.get() == 0xFE) [[unlikely]]
+			{
+				size = 1;
+				if (srcStream.get() == 0x00) [[unlikely]]
+				{
+					size++;
+					if (srcStream.get() == 0x00) [[unlikely]]
+					{
+						encoding = Encoding::UTF32LE;
+						size = 0;
+						break;
+					}
+				}
+				encoding = Encoding::UTF16LE;
+				break;
+			}
+			break;
+		default: [[likely]]
+			break;
 		}
 
-		int32_t& unicode = codePoint = 0;
-		size = 0;
-		if (hasFlags(encoding, Encoding::UTF8)) [[likely]]
+		JSON_UNGET(srcStream, size);
+	}
+
+	void writeBOM(std::ostream& dstStream, Encoding encoding)
+	{
+#if defined(JSON_DEFAULT_WRITE_UTF8_BOM) && JSON_DEFAULT_WRITE_UTF8_BOM
+		if (encoding <= Encoding::UTF8) [[likely]]
 		{
-			int32_t b = 0;
-			unicode = b = stream.get();
+			stream << uint8_t(0xEF) << uint8_t(0xBB) << uint8_t(0xBF);
+		}
+#endif
+#if defined(JSON_DEFAULT_WRITE_UTF16_BOM) && JSON_DEFAULT_WRITE_UTF16_BOM
+			if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
+			{
+				if (hasFlags(encoding, Encoding::LittleEndian)) [[unlikely]]
+				{
+					dstStream << uint8_t(0xFF) << uint8_t(0xFE);
+				}
+				else [[likely]]
+				{
+					dstStream << uint8_t(0xFE) << uint8_t(0xFF);
+				}
+			}
+#endif
+	}
+
+	int32_t readChar(std::istream& srcStream, uint32_t& codePoint, Encoding encoding)
+	{
+		int32_t size = 0;
+		uint32_t& unicode = codePoint = 0;
+		size = 0;
+		if (encoding <= Encoding::UTF8) [[likely]]
+		{
+			uint32_t b = unicode = static_cast<uint32_t>(srcStream.get());
 			if ((b & 0x80) == 0) [[likely]]
 			{
 				size = 1;
@@ -413,30 +719,30 @@ namespace JSON
 			}
 				if (size > 1) [[unlikely]]
 				{
-					for (int i = 0; i < (size - 1); i++)
+					for (int32_t i = 0; i < (size - 1); i++)
 					{
-						b = stream.get();
+						b = static_cast<uint32_t>(srcStream.get());
 						unicode = (unicode << 8) | b;
 					}
 				}
-					if (b == EOF) [[unlikely]]
+					if (b == JSON_EOF) [[unlikely]]
 					{
-						unicode = EOF;
+						unicode = JSON_EOF;
 						return 0;
 					}
 				codePoint = utf8ToCodePoint(unicode);
 		}
 		else if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
 		{
-			int32_t b1, b2;
-			for (int i = 0; i < 2; i++)
+			uint32_t b1, b2;
+			for (int32_t i = 0; i < 2; i++)
 			{
 				size += 2;
-				b1 = stream.get();
-				b2 = stream.get();
-				if (b2 == EOF) [[unlikely]]
+				b1 = static_cast<uint32_t>(srcStream.get());
+				b2 = static_cast<uint32_t>(srcStream.get());
+				if (b2 == JSON_EOF) [[unlikely]]
 				{
-					codePoint = EOF;
+					codePoint = JSON_EOF;
 					return 0;
 				}
 				unicode = (unicode << (i * 16)) | ((b1 << 8) | b2);
@@ -460,28 +766,28 @@ namespace JSON
 		else if (hasFlags(encoding, Encoding::UTF32)) [[unlikely]]
 		{
 			size = 4;
-			int32_t b1 = stream.get();
-			if (b1 == EOF) [[unlikely]]
+			uint32_t b1 = static_cast<uint32_t>(srcStream.get());
+			if (b1 == JSON_EOF) [[unlikely]]
 			{
-				codePoint = EOF;
+				codePoint = JSON_EOF;
 				return 0;
 			}
-			int32_t b2 = stream.get();
-			if (b2 == EOF) [[unlikely]]
+			uint32_t b2 = static_cast<uint32_t>(srcStream.get());
+			if (b2 == JSON_EOF) [[unlikely]]
 			{
-				codePoint = EOF;
+				codePoint = JSON_EOF;
 				return 1;
 			}
-			int32_t b3 = stream.get();
-			if (b3 == EOF) [[unlikely]]
+			uint32_t b3 = static_cast<uint32_t>(srcStream.get());
+			if (b3 == JSON_EOF) [[unlikely]]
 			{
-				codePoint = EOF;
+				codePoint = JSON_EOF;
 				return 2;
 			}
-			int32_t b4 = stream.get();
-			if (b4 == EOF) [[unlikely]]
+			uint32_t b4 = static_cast<uint32_t>(srcStream.get());
+			if (b4 == JSON_EOF) [[unlikely]]
 			{
-				codePoint = EOF;
+				codePoint = JSON_EOF;
 				return 3;
 			}
 			unicode = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
@@ -490,250 +796,76 @@ namespace JSON
 		return size;
 	}
 
-	int readCharNoSpaces(std::istream& stream, int32_t& codePoint, Encoding& encoding)
+	int32_t readChar(std::wistream& srcStream, uint32_t& codePoint, Encoding srcEncoding)
 	{
-		int size = 0;
-		do
+		int32_t size = 0;
+		uint32_t& unicode = codePoint = 0;
+		size = 0;
+		if (hasFlags(srcEncoding, Encoding::UTF16)) [[likely]]
 		{
-			size = readChar(stream, codePoint, encoding);
-		} while (codePoint == 0x20 || codePoint == 0x9 || codePoint == 0xA || codePoint == 0xD);
+			uint16_t b;
+			for (int32_t i = 0; i < 1; i++)
+			{
+				size++;
+				b = srcStream.get();
+				if (b == WEOF) [[unlikely]]
+				{
+					codePoint = JSON_EOF;
+					return 0;
+				}
+				unicode = (unicode << (i * 16)) | b;
+				if (hasFlags(srcEncoding, Encoding::LittleEndian)) [[likely]]
+				{
+					if ((unicode & 0x00F8) != 0x00D8) [[likely]]
+					{
+						break;
+					}
+				}
+				else if (hasFlags(srcEncoding, Encoding::BigEndian)) [[unlikely]]
+				{
+					if ((unicode & 0xF800) != 0xD800) [[likely]]
+					{
+						break;
+					}
+				}
+			}
+			codePoint = utf16ToCodePoint(unicode, srcEncoding);
+		}
+		else if (hasFlags(srcEncoding, Encoding::UTF32)) [[unlikely]]
+		{
+			size = 4;
+			uint16_t b1 = srcStream.get();
+			if (b1 == JSON_EOF) [[unlikely]]
+			{
+				codePoint = JSON_EOF;
+				return 0;
+			}
+			uint32_t b2 = srcStream.get();
+			if (b2 == JSON_EOF) [[unlikely]]
+			{
+				codePoint = JSON_EOF;
+				return 1;
+			}
+			uint32_t b3 = srcStream.get();
+			if (b3 == JSON_EOF) [[unlikely]]
+			{
+				codePoint = JSON_EOF;
+				return 2;
+			}
+			uint32_t b4 = srcStream.get();
+			if (b4 == JSON_EOF) [[unlikely]]
+			{
+				codePoint = JSON_EOF;
+				return 3;
+			}
+			unicode = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+			codePoint = utf32ToCodePoint(unicode, srcEncoding);
+		}
+		else [[unlikely]]
+		{
+			throw std::runtime_error("readchar_wistream_badencoding");
+		}
 		return size;
-	}
-
-	void serializeUnicodeChar(std::ostream& stream, int32_t unicode, Encoding encoding)
-	{
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-		std::cout << std::hex << std::uppercase << std::setfill('0');
-#endif
-
-		uint8_t* byteArray = (uint8_t*)&unicode;
-		uint8_t byte = 0;
-		bool started = hasFlags(encoding, Encoding::UTF32);
-#if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
-		static const int utf8last = 3;
-		static const int utf16last = 2;
-		for (int i = 0; i < 4; i++)
-#else
-		static const int utf8last = 0;
-		static const int utf16last = 1;
-		for (int i = 3; i >= 0; i--)
-#endif
-		{
-			byte = byteArray[i];
-			if (!started) [[likely]]
-			{
-				if (byte) [[unlikely]]
-				{
-					started = true;
-				}
-				else if (hasFlags(encoding, Encoding::UTF8)) [[unlikely]]
-				{
-					if (i == utf8last) [[unlikely]]
-					{
-						started = true;
-					}
-				}
-				else if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
-				{
-					if (i == utf16last) [[unlikely]]
-					{
-						started = true;
-					}
-				}
-			}
-				if (started) [[unlikely]]
-				{
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-					std::cout << std::setw(2) << static_cast<uint16_t>(byte) << ' ';
-#endif
-					stream << byte;
-				}
-		}
-	}
-
-	void serializeUnicodeChar(std::string& dst, int32_t codePoint, Encoding encoding)
-	{
-		std::ostringstream stream;
-		serializeUnicodeChar(stream, codePoint, encoding);
-		dst += stream.str();
-	}
-
-	void serializeUnicodeChar(std::wostream& stream, int32_t unicode, Encoding encoding)
-	{
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-		std::cout << std::hex << std::uppercase << std::setfill('0');
-#endif
-
-		if (hasFlags(encoding, Encoding::UTF8)) [[unlikely]]
-		{
-			assert(false); // you should not store an UTF8 string in a wstring/wstream
-
-			uint8_t* byteArray = (uint8_t*)&unicode;
-			bool started = false;
-#if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
-			const int start = 0, end = 4, increment = 1;
-#else
-			const int start = 3, end = -1, increment = -1;
-#endif
-			for (int i = start; i != end; i += increment)
-			{
-				wchar_t wc = (wchar_t)byteArray[i];
-				if (wc || started || i == (end - increment)) [[unlikely]]
-				{
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-					std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
-					std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
-#endif
-					stream << wc;
-					started = true;
-				}
-			}
-		}
-		else if (hasFlags(encoding, Encoding::UTF16)) [[likely]]
-		{
-#if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
-			const int start = 0, end = 2, increment = 1;
-#else
-			const int start = 1, end = -1, increment = -1;
-#endif
-			for (int i = start; i != end; i += increment)
-			{
-				wchar_t wc = ((uint16_t*)&unicode)[i];
-
-				if (i == (end - increment) || wc) [[unlikely]]
-				{
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-					std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
-					std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
-#endif
-					stream << wc;
-				}
-			}
-		}
-		else if (hasFlags(encoding, Encoding::UTF32)) [[unlikely]]
-		{
-			assert(false); // you should not store an UTF32 string in a wstring/wstream
-
-#if defined(JSON_PLATFORM_IS_BIG_ENDIAN)
-			const int start = 0, end = 2, increment = 1;
-#else
-			const int start = 1, end = -1, increment = -1;
-#endif
-			for (int i = start; i != end; i += increment)
-			{
-				wchar_t wc = ((uint16_t*)&unicode)[i];
-
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-				std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
-				std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
-#endif
-				stream << wc;
-			}
-		}
-	}
-
-	void serializeUnicodeChar(std::wstring& dst, int32_t codePoint, Encoding encoding)
-	{
-		std::wostringstream stream;
-		serializeUnicodeChar(stream, codePoint, encoding);
-		dst += stream.str();
-	}
-
-	void utf16ToUtf8(std::ostream& dst, const std::wstring& src, Encoding srcEncoding)
-	{
-		wchar_t wcFirstPart = 0;
-		for (wchar_t wc : src)
-		{
-			if (wcFirstPart != 0) [[unlikely]] // 2x UTF-16 (part 2)
-			{
-				serializeUnicodeChar(dst, codePointToUtf8(utf16ToCodePoint(wcFirstPart, wc, srcEncoding)), Encoding::UTF8);
-				wcFirstPart = 0;
-			}
-			else if (wc > 0xD800) [[unlikely]] // 2x UTF-16 (part 1)
-			{
-				wcFirstPart = wc;
-			}
-			else [[likely]] // 1x UTF-16
-			{
-				serializeUnicodeChar(dst, codePointToUtf8(utf16ToCodePoint(wc, srcEncoding)), Encoding::UTF8);
-			}
-		}
-	}
-
-	void utf16ToUtf8(std::string& dst, const std::wstring& src, Encoding srcEncoding)
-	{
-		std::ostringstream stream;
-		utf16ToUtf8(stream, src, srcEncoding);
-		dst = stream.str();
-	}
-
-	void utf8ToUtf16(std::wostream& dst, const std::string& src, Encoding dstEncoding)
-	{
-		std::istringstream srcStream(src);
-		int32_t codePoint = 0;
-		Encoding encoding = Encoding::UTF8;
-		while (true)
-		{
-			JSON_READ_CHAR_NO_SPACES(srcStream, codePoint, encoding);
-			if (codePoint == EOF)
-			{
-				return;
-			}
-			serializeUnicodeChar(dst, codePointToUtf16(utf8ToCodePoint(codePoint), dstEncoding), dstEncoding);
-		}
-	}
-
-	void utf8ToUtf16(std::wstring& dst, const std::string& src, Encoding dstEncoding)
-	{
-		std::wostringstream stream;
-		utf8ToUtf16(stream, src, dstEncoding);
-		dst = stream.str();
-	}
-
-	void utf8ToUtf16(std::ostream& dst, const std::string& src, Encoding dstEncoding)
-	{
-		std::istringstream srcStream(src);
-		int32_t codePoint = 0;
-		Encoding encoding = Encoding::UTF8;
-		while (true)
-		{
-			JSON_READ_CHAR_NO_SPACES(srcStream, codePoint, encoding);
-			if (codePoint == EOF)
-			{
-				return;
-			}
-			serializeUnicodeChar(dst, codePoint, dstEncoding);
-		}
-	}
-
-	void utf8ToUtf16(std::string& dst, const std::string& src, Encoding dstEncoding)
-	{
-		std::ostringstream stream;
-		utf8ToUtf16(stream, src, dstEncoding);
-		dst = stream.str();
-	}
-	
-	void writeBOM(std::ostream& stream, Encoding encoding)
-	{
-	#if defined(JSON_DEFAULT_WRITE_UTF8_BOM) && JSON_DEFAULT_WRITE_UTF8_BOM != 0
-		if (encoding.hasFlags(Encoding::UTF8)) [[likely]]
-		{
-			stream << uint8_t(0xEF) << uint8_t(0xBB) << uint8_t(0xBF);
-		}
-	#endif
-	#if defined(JSON_DEFAULT_WRITE_UTF16_BOM) && JSON_DEFAULT_WRITE_UTF16_BOM != 0
-		if (hasFlags(encoding, Encoding::UTF16)) [[unlikely]]
-		{
-			if (hasFlags(encoding, Encoding::LittleEndian)) [[unlikely]]
-			{
-				stream << uint8_t(0xFF) << uint8_t(0xFE);
-			}
-			else [[likely]]
-			{
-				stream << uint8_t(0xFE) << uint8_t(0xFF);
-			}
-		}
-	#endif
 	}
 }
 

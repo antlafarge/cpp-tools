@@ -5,7 +5,6 @@
 #include <iomanip>
 #include <limits>
 #include <sstream>
-#include <fstream>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
@@ -14,8 +13,9 @@
 namespace JSON
 {
 	template<class TString>
-	Field::Field(const TString& fieldName, const Options& options)
-		: options(options)
+	Field::Field(const TString& fieldName, Encoding memberEncoding, int32_t precision)
+		: memberEncoding(memberEncoding)
+		, precision(precision)
 	{
 		std::ostringstream stream;
 		stream << fieldName;
@@ -25,289 +25,325 @@ namespace JSON
 #pragma region Serialization
 
 	template<class TValue>
-	std::string serialize(const TValue& value, const Options& options)
+	std::string serialize(const TValue& srcValue, const Options& options)
 	{
-		std::ostringstream stream;
-		serialize(stream, value, options);
-		return stream.str();
+		std::ostringstream dstStream;
+		serialize(dstStream, srcValue, options);
+		return dstStream.str();
 	}
 
 	template<class TValue>
-	void serialize(std::ofstream&& stream, const TValue& value, const Options& options)
+	void serialize(std::ofstream&& dstStream, const TValue& srcValue, const Options& options)
 	{
-		std::ostream stream2(stream.rdbuf());
-		writeBOM(stream2, options.encoding);
-		serialize(stream2, value, options);
+		std::ostream dstStream2(dstStream.rdbuf());
+		if (dstStream.tellp() == 0) [[likely]]
+		{
+			writeBOM(dstStream2, options.jsonEncoding);
+		}
+		serialize(dstStream2, srcValue, options);
 	}
 
 	template<class TValue>
-	void serialize(std::ostream&& stream, const TValue& value, const Options& options)
+	void serialize(std::ofstream& dstStream, const TValue& srcValue, const Options& options)
 	{
-		std::ostream stream2(stream.rdbuf());
-		serialize(stream2, value, options);
+		if (dstStream.tellp() == 0) [[likely]]
+		{
+			writeBOM(dstStream, options.jsonEncoding);
+		}
+		serialize(dstStream, srcValue, options);
 	}
 
 	template<class TValue>
-	void serialize(std::ostream& stream, const TValue& value, const Options& options)
+	void serialize(std::ostream&& dstStream, const TValue& srcValue, const Options& options)
 	{
-		Options options2(options);
-		serializeValue(stream, &value, options2);
+		std::ostream dstStream2(dstStream.rdbuf());
+		serialize(dstStream2, srcValue, options);
+	}
+
+	template<class TValue>
+	void serialize(std::ostream& dstStream, const TValue& srcValue, const Options& options)
+	{
+		serializeValue(dstStream, &srcValue, options);
 	}
 
 	template<class TValue, class... TValues>
-	void serializeFieldValue(std::ostream& stream, Options& options, const FieldValue<TValue>& fieldValue, const FieldValue<TValues>&... fieldValues)
+	void serializeFieldValue(std::ostream& dstStream, const Options& options, const FieldValue<TValue>& srcFieldValue, const FieldValue<TValues>&... srcFieldValues)
 	{
-		Options optionsMerged = Options::merge(options, fieldValue.field.options);
-		serializeFieldValue(stream, options, fieldValue);
-		serializeUnicodeChar(stream, codePointToUnicode(',', optionsMerged), optionsMerged);
-		serializeFieldValue(stream, options, fieldValues...);
+		serializeFieldValue(dstStream, options, srcFieldValue);
+		serializeCodePointChar(dstStream, ',', options.jsonEncoding);
+		serializeFieldValue(dstStream, options, srcFieldValues...);
+	}
+
+	template<class TValue, class... TValues>
+	void serializeFieldValue(std::ostream& dstStream, const FieldValue<TValue>& srcFieldValue, const FieldValue<TValues>&... srcFieldValues)
+	{
+		serializeFieldValue(dstStream, Options(), srcFieldValue, srcFieldValues...);
 	}
 
 	template<class TValue>
-	void serializeFieldValue(std::ostream& stream, Options& options, const FieldValue<TValue>& fieldValue)
+	void serializeFieldValue(std::ostream& dstStream, const Options& options, const FieldValue<TValue>& srcFieldValue)
 	{
-		Options optionsMerged = Options::merge(options, fieldValue.field.options);
-		serializeValue(stream, &fieldValue.field.name, optionsMerged);
-		serializeUnicodeChar(stream, codePointToUnicode(':', optionsMerged), optionsMerged);
-		serializeValue(stream, &fieldValue.value, optionsMerged);
+		serializeValue(dstStream, &srcFieldValue.field.name, options);
+
+		serializeCodePointChar(dstStream, ':', options.jsonEncoding);
+
+		serializeValue(dstStream, &srcFieldValue.value, Options(options.jsonEncoding, (srcFieldValue.field.memberEncoding != Encoding::Unknown ? srcFieldValue.field.memberEncoding : options.memberEncoding), (srcFieldValue.field.precision != -1 ? srcFieldValue.field.precision : options.precision)));
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const TValue* value, Options& options)
+	void serializeFieldValue(std::ostream& dstStream, const FieldValue<TValue>& srcFieldValue)
 	{
-		value->toJSON(stream, options);
+		serializeFieldValue(dstStream, Options(), srcFieldValue);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::optional<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const TValue* srcValue, const Options& options)
 	{
-		if (*value)
+		srcValue->toJSON(dstStream, options);
+	}
+
+	template<class TValue>
+	void serializeValue(std::ostream& dstStream, const std::optional<TValue>* srcOptional, const Options& options)
+	{
+		if (*srcOptional)
 		{
-			serializeValue(stream, &**value, options);
+			serializeValue(dstStream, &**srcOptional, options);
 		}
 		else
 		{
-			serializeUnicodeChar(stream, codePointToUnicode('n', options), options);
-			serializeUnicodeChar(stream, codePointToUnicode('u', options), options);
-			serializeUnicodeChar(stream, codePointToUnicode('l', options), options);
-			serializeUnicodeChar(stream, codePointToUnicode('l', options), options);
+			serializeCodePointChar(dstStream, 'n', options.jsonEncoding);
+			serializeCodePointChar(dstStream, 'u', options.jsonEncoding);
+			serializeCodePointChar(dstStream, 'l', options.jsonEncoding);
+			serializeCodePointChar(dstStream, 'l', options.jsonEncoding);
 		}
 	}
 
 	template<class TInteger>
-	void serializeValueInteger(std::ostream& stream, const TInteger* value, Options& options)
+	void serializeValueInteger(std::ostream& dstStream, const TInteger* srcNumber, const Options& options)
 	{
-		if (options.hasFlags(Encoding::UTF8) || (options == Encoding::None && JSON_DEFAULT_ENCODING == Encoding::UTF8)) [[likely]]
+		if (options.jsonEncoding <= Encoding::UTF8) [[likely]]
 		{
-			stream << *value;
+			dstStream << *srcNumber;
 		}
 		else [[unlikely]]
 		{
-			std::ostringstream stream2;
-			stream2 << *value;
-			std::string str = stream2.str();
-			for (char c : str)
+			std::stringstream stream;
+			stream << *srcNumber;
+			stream.seekg(0, stream.beg);
+			uint32_t codePoint;
+			while (true)
 			{
-				serializeUnicodeChar(stream, codePointToUnicode(c, options), options);
+				codePoint = readChar(stream, codePoint, Encoding::UTF8);
+				if (codePoint == JSON_EOF)
+				{
+					break;
+				}
+				serializeCodePointChar(dstStream, codePoint, options.jsonEncoding);
 			}
 		}
 	}
 
 	template<class TFloat>
-	void serializeValueFloat(std::ostream& stream, const TFloat* value, Options& options)
+	void serializeValueFloat(std::ostream& dstStream, const TFloat* srcNumber, const Options& options)
 	{
-		std::streamsize precision = (options.precision != -1 ? options.precision : std::numeric_limits<TFloat>::max_digits10);
-		if (options.hasFlags(Encoding::UTF8) || (options == Encoding::None && JSON_DEFAULT_ENCODING == Encoding::UTF8)) [[likely]]
+		int32_t precision = (options.precision != -1 ? options.precision : std::numeric_limits<TFloat>::max_digits10);
+		if (options.jsonEncoding <= Encoding::UTF8) [[likely]]
 		{
-			stream << std::setprecision(precision) << *value;
+			dstStream << std::setprecision(precision) << *srcNumber;
 		}
 		else [[unlikely]]
 		{
-			std::ostringstream stream2;
-			stream2 << std::setprecision(precision) << *value;
-			std::string str = stream2.str();
-			for (char c : str)
+			std::stringstream stream;
+			stream << std::setprecision(precision) << *srcNumber;
+			stream.seekg(0, stream.beg);
+			uint32_t codePoint;
+			while (true)
 			{
-				serializeUnicodeChar(stream, codePointToUnicode(c, options), options);
+				codePoint = readChar(stream, codePoint, Encoding::UTF8);
+				if (codePoint == JSON_EOF)
+				{
+					break;
+				}
+				serializeCodePointChar(dstStream, codePoint, options.jsonEncoding);
 			}
 		}
 	}
 
 	template<class TArray>
-	void serializeValueArray(std::ostream& stream, const TArray* value, Options& options)
+	void serializeValueArray(std::ostream& dstStream, const TArray* srcContainer, const Options& options)
 	{
-		serializeUnicodeChar(stream, codePointToUnicode('[', options), options);
+		serializeCodePointChar(dstStream, '[', options.jsonEncoding);
 		bool appendcomma = false;
-		for (const auto& item : *value)
+		for (const auto& item : *srcContainer)
 		{
 			if (appendcomma) [[likely]]
 			{
-				serializeUnicodeChar(stream, codePointToUnicode(',', options), options);
+				serializeCodePointChar(dstStream, ',', options.jsonEncoding);
 			}
 			else [[unlikely]]
 			{
 				appendcomma = true;
 			}
-			serializeValue(stream, &item, options);
+			serializeValue(dstStream, &item, options);
 		}
-		serializeUnicodeChar(stream, codePointToUnicode(']', options), options);
+		serializeCodePointChar(dstStream, ']', options.jsonEncoding);
 	}
 
 	template<class TValue, std::size_t TArraySize>
-	void serializeValue(std::ostream& stream, const class std::array<TValue, TArraySize>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const class std::array<TValue, TArraySize>* srcContainer, const Options& options)
 	{
-		serializeValueArray(stream, value, options);
+		serializeValueArray(dstStream, srcContainer, options);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::vector<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::vector<TValue>* srcContainer, const Options& options)
 	{
-		serializeValueArray(stream, value, options);
+		serializeValueArray(dstStream, srcContainer, options);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::deque<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::deque<TValue>* srcContainer, const Options& options)
 	{
-		serializeValueArray(stream, value, options);
+		serializeValueArray(dstStream, srcContainer, options);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::forward_list<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::forward_list<TValue>* srcContainer, const Options& options)
 	{
-		serializeValueArray(stream, value, options);
+		serializeValueArray(dstStream, srcContainer, options);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::list<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::list<TValue>* srcContainer, const Options& options)
 	{
-		serializeValueArray(stream, value, options);
+		serializeValueArray(dstStream, srcContainer, options);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::set<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::set<TValue>* srcContainer, const Options& options)
 	{
-		serializeValueArray(stream, value, options);
+		serializeValueArray(dstStream, srcContainer, options);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::multiset<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::multiset<TValue>* srcContainer, const Options& options)
 	{
-		serializeValueArray(stream, value, options);
+		serializeValueArray(dstStream, srcContainer, options);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::unordered_set<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::unordered_set<TValue>* srcContainer, const Options& options)
 	{
-		serializeValueArray(stream, value, options);
+		serializeValueArray(dstStream, srcContainer, options);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::unordered_multiset<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::unordered_multiset<TValue>* srcContainer, const Options& options)
 	{
-		serializeValueArray(stream, value, options);
+		serializeValueArray(dstStream, srcContainer, options);
 	}
 
 	template<class TObject>
-	void serializeValueObject(std::ostream& stream, const TObject* value, Options& options)
+	void serializeValueObject(std::ostream& dstStream, const TObject* srcContainer, const Options& options)
 	{
-		serializeUnicodeChar(stream, codePointToUnicode('{', options), options);
+		serializeCodePointChar(dstStream, '{', options.jsonEncoding);
 		bool appendcomma = false;
-		for (const auto& pair : *value)
+		for (const auto& pair : *srcContainer)
 		{
 			if (appendcomma) [[likely]]
 			{
-				serializeUnicodeChar(stream, codePointToUnicode(',', options), options);
+				serializeCodePointChar(dstStream, ',', options.jsonEncoding);
 			}
 			else [[unlikely]]
 			{
 				appendcomma = true;
 			}
-			serializeFieldValue(stream, options, FieldValue<const decltype(pair.second)>(Field(pair.first, options), pair.second));
+			serializeFieldValue(dstStream, options, FieldValue<const decltype(pair.second)>(Field(pair.first, options.memberEncoding, options.precision), pair.second));
 		}
-		serializeUnicodeChar(stream, codePointToUnicode('}', options), options);
+		serializeCodePointChar(dstStream, '}', options.jsonEncoding);
 	}
 
 	template<class TField, class TValue>
-	void serializeValue(std::ostream& stream, const std::map<TField, TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::map<TField, TValue>* srcContainer, const Options& options)
 	{
-		serializeValueObject(stream, value, options);
+		serializeValueObject(dstStream, srcContainer, options);
 	}
 
 	template<class TField, class TValue>
-	void serializeValue(std::ostream& stream, const std::multimap<TField, TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::multimap<TField, TValue>* srcContainer, const Options& options)
 	{
-		serializeValueObject(stream, value, options);
+		serializeValueObject(dstStream, srcContainer, options);
 	}
 
 	template<class TField, class TValue>
-	void serializeValue(std::ostream& stream, const std::unordered_map<TField, TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::unordered_map<TField, TValue>* srcContainer, const Options& options)
 	{
-		serializeValueObject(stream, value, options);
+		serializeValueObject(dstStream, srcContainer, options);
 	}
 
 	template<class TField, class TValue>
-	void serializeValue(std::ostream& stream, const std::unordered_multimap<TField, TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::unordered_multimap<TField, TValue>* srcContainer, const Options& options)
 	{
-		serializeValueObject(stream, value, options);
+		serializeValueObject(dstStream, srcContainer, options);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::stack<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::stack<TValue>* srcContainer, const Options& options)
 	{
-		std::stack<TValue> copy(*value);
+		std::stack<TValue> copy(*srcContainer);
 		std::deque<TValue> copy2;
 		while (!copy.empty())
 		{
 			copy2.emplace_front(std::move(copy.top()));
 			copy.pop();
 		}
-		serializeValue(stream, &copy2, options);
+		serializeValue(dstStream, &copy2, options);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::queue<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::queue<TValue>* srcContainer, const Options& options)
 	{
-		std::queue<TValue> copy(*value);
-		serializeUnicodeChar(stream, codePointToUnicode('[', options), options);
+		std::queue<TValue> copy(*srcContainer);
+		serializeCodePointChar(dstStream, '[', options.jsonEncoding);
 		bool appendcomma = false;
 		while (!copy.empty())
 		{
 			const TValue& item = copy.front();
 			if (appendcomma) [[likely]]
 			{
-				serializeUnicodeChar(stream, codePointToUnicode(',', options), options);
+				serializeCodePointChar(dstStream, ',', options.jsonEncoding);
 			}
 			else [[unlikely]]
 			{
 				appendcomma = true;
 			}
-			serializeValue(stream, &item, options);
+			serializeValue(dstStream, &item, options);
 			copy.pop();
 		}
-		serializeUnicodeChar(stream, codePointToUnicode(']', options), options);
+		serializeCodePointChar(dstStream, ']', options.jsonEncoding);
 	}
 
 	template<class TValue>
-	void serializeValue(std::ostream& stream, const std::priority_queue<TValue>* value, Options& options)
+	void serializeValue(std::ostream& dstStream, const std::priority_queue<TValue>* srcContainer, const Options& options)
 	{
-		std::priority_queue<TValue> copy(*value);
-		serializeUnicodeChar(stream, codePointToUnicode('[', options), options);
+		std::priority_queue<TValue> copy(*srcContainer);
+		serializeCodePointChar(dstStream, '[', options.jsonEncoding);
 		bool appendcomma = false;
 		while (!copy.empty())
 		{
 			const TValue& item = copy.top();
 			if (appendcomma) [[likely]]
 			{
-				serializeUnicodeChar(stream, codePointToUnicode(',', options), options);
+				serializeCodePointChar(dstStream, ',', options.jsonEncoding);
 			}
 			else [[unlikely]]
 			{
 				appendcomma = true;
 			}
-			serializeValue(stream, &item, options);
+			serializeValue(dstStream, &item, options);
 			copy.pop();
 		}
-		serializeUnicodeChar(stream, codePointToUnicode(']', options), options);
+		serializeCodePointChar(dstStream, ']', options.jsonEncoding);
 	}
 
 #pragma endregion
@@ -315,268 +351,302 @@ namespace JSON
 #pragma region Deserialization
 
 	template<class TValue>
-	void deserialize(const std::string& json, TValue& value, const Options& options)
+	void deserialize(const std::string& srcJson, TValue& dstValue, const Options& options)
 	{
-		std::istringstream stream(json);
-		deserialize(stream, value, options);
+		std::istringstream srcStream(srcJson);
+		deserialize(srcStream, dstValue, options);
 	}
 
 	template<class TValue>
-	void deserialize(std::istream&& stream, TValue& value, const Options& options)
+	void deserialize(std::ifstream&& srcStream, TValue& dstValue, const Options& options)
 	{
-		std::istream stream2(stream.rdbuf());
-		deserialize(stream2, value, options);
+		std::istream srcStream2(srcStream.rdbuf());
+		Options options2(options);
+		if (srcStream.gcount() == 0) [[likely]]
+		{
+			readBOM(srcStream2, options2.jsonEncoding);
+			if (options.jsonEncoding != JSON_DEFAULT_ENCODING) [[unlikely]]
+			{
+				options2.jsonEncoding = options.jsonEncoding;
+			}
+		}
+		deserialize(srcStream2, dstValue, options2);
 	}
 
 	template<class TValue>
-	void deserialize(std::istream& stream, TValue& value, const Options& options)
+	void deserialize(std::ifstream& srcStream, TValue& dstValue, const Options& options)
 	{
 		Options options2(options);
-		deserializeValue(stream, &value, options2);
+		if (srcStream.gcount() == 0) [[likely]]
+		{
+			readBOM(srcStream, options2.jsonEncoding);
+			if (options.jsonEncoding != JSON_DEFAULT_ENCODING) [[unlikely]]
+			{
+				options2.jsonEncoding = options.jsonEncoding;
+			}
+		}
+		deserialize(srcStream, dstValue, options2);
+	}
+
+	template<class TValue>
+	void deserialize(std::istream&& srcStream, TValue& dstValue, const Options& options)
+	{
+		std::istream stream2(srcStream.rdbuf());
+		deserialize(stream2, dstValue, options);
+	}
+
+	template<class TValue>
+	void deserialize(std::istream& srcStream, TValue& dstValue, const Options& options)
+	{
+		deserializeValue(srcStream, &dstValue, options);
 	}
 
 	template<class TValue, class... TValues>
-	void deserializeFieldValue(const Value& value, const FieldValue<TValue>& fieldValue, const FieldValue<TValues>&... fieldValues)
+	void deserializeFieldValue(const Value& dstValue, const Options& options, const FieldValue<TValue>& dstFieldValue, const FieldValue<TValues>&... dstFieldValues)
 	{
-		if (value.type != Type::Object) [[unlikely]]
+		if (dstValue.type != Type::Object) [[unlikely]]
 		{
 			throw std::runtime_error("json_deserialize_notanobject");
 		}
-		auto it = value.ptrObject->find(fieldValue.field.name);
-		if (it != value.ptrObject->end()) [[likely]]
+		auto it = dstValue.ptrObject->find(dstFieldValue.field.name);
+		if (it != dstValue.ptrObject->end()) [[likely]]
 		{
-			deserializeValue(it->second, &fieldValue.value);
+			deserializeValue(it->second, &dstFieldValue.value, Options(JSON_DEFAULT_ENCODING, (dstFieldValue.field.memberEncoding != JSON_DEFAULT_ENCODING ? dstFieldValue.field.memberEncoding : options.memberEncoding), (dstFieldValue.field.precision != -1 ? dstFieldValue.field.precision : options.precision)));
 		}
-		deserializeFieldValue(value, fieldValues...);
+		deserializeFieldValue(dstValue, options, dstFieldValues...);
+	}
+
+	template<class TValue, class... TValues>
+	void deserializeFieldValue(const Value& dstValue, const FieldValue<TValue>& dstFieldValue, const FieldValue<TValues>&... dstFieldValues)
+	{
+		deserializeFieldValue(dstValue, Options(), dstFieldValues...);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, TValue* value, Options& options)
+	void deserializeValue(std::istream& srcStream, TValue* dstValue, const Options& options)
 	{
-		value->fromJSON(stream, options);
+		dstValue->fromJSON(srcStream, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::optional<TValue>* value, Options& options)
+	void deserializeValue(std::istream& srcStream, std::optional<TValue>* dstOptional, const Options& options)
 	{
-		int32_t codePoint = 0;
-		int size = 0;
-		size += JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+		uint32_t codePoint = 0;
+		int32_t size = 0;
+		size += readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 		if (codePoint == 'n') [[likely]]
 		{
-			size += JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+			size += readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 			if (codePoint == 'u') [[likely]]
 			{
-				size += JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+				size += readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 				if (codePoint == 'l') [[likely]]
 				{
-					size += JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
+					size += readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
 					if (codePoint == 'l') [[likely]]
 					{
-						if (value) [[likely]]
+						if (dstOptional) [[likely]]
 						{
-							*value = std::nullopt;
+							*dstOptional = std::nullopt;
 						}
 						return;
 					}
 				}
 			}
 		}
-			if (codePoint == EOF) [[unlikely]]
+
+			if (codePoint == JSON_EOF) [[unlikely]]
 			{
 				throw std::runtime_error("json_deserialize_null_truncated");
 			}
 
-					for (int i = 0; i < size; i++)
-					{
-						stream.unget();
-					}
+					JSON_UNGET(srcStream, size);
 
-					if (value) [[likely]]
+					if (dstOptional) [[likely]]
 					{
-						if (!*value) [[unlikely]]
+						if (!*dstOptional) [[unlikely]]
 						{
-							*value = TValue();
+							*dstOptional = TValue();
 						}
-						deserializeValue(stream, &**value, options);
+						deserializeValue(srcStream, &**dstOptional, options);
 					}
 					else [[unlikely]]
 					{
-						deserializeValue(stream, (TValue*)nullptr, options);
+						deserializeValue(srcStream, (TValue*)nullptr, options);
 					}
 	}
 
 	template<class TValue, std::size_t TSize>
-	void deserializeValue(std::istream& stream, std::array<TValue, TSize>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::array<TValue, TSize>* dstContainer, const Options& options)
 	{
-		deserializeValueContainer<std::array<TValue, TSize>, TValue>(stream, container, [](auto* container, auto* value, auto index) { (*container)[index] = std::move(*value); }, options);
+		deserializeValueContainer<std::array<TValue, TSize>, TValue>(srcStream, dstContainer, [](auto* dstContainer, auto* value, auto index) { (*dstContainer)[index] = std::move(*value); }, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::vector<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::vector<TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueContainer<std::vector<TValue>, TValue>(stream, container, [](auto* container, auto* value, auto) { container->emplace_back(std::move(*value)); }, options);
+		deserializeValueContainer<std::vector<TValue>, TValue>(srcStream, dstContainer, [](auto* dstContainer, auto* value, auto) { dstContainer->emplace_back(std::move(*value)); }, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::deque<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::deque<TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueContainer<std::deque<TValue>, TValue>(stream, container, [](auto* container, auto* value, auto) { container->emplace_back(std::move(*value)); }, options);
+		deserializeValueContainer<std::deque<TValue>, TValue>(srcStream, dstContainer, [](auto* dstContainer, auto* value, auto) { dstContainer->emplace_back(std::move(*value)); }, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::forward_list<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::forward_list<TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueContainerIt<std::forward_list<TValue>, TValue>(stream, container, [](auto* container) { return container->before_begin(); }, [](auto* container, auto* value, auto& it) { container->emplace_after(it, std::move(*value)); it++; }, options);
+		deserializeValueContainerIt<std::forward_list<TValue>, TValue>(srcStream, dstContainer, [](auto* dstContainer) { return dstContainer->before_begin(); }, [](auto* dstContainer, auto* value, auto& it) { dstContainer->emplace_after(it, std::move(*value)); it++; }, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::list<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::list<TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueContainer<std::list<TValue>, TValue>(stream, container, [](auto* container, auto* value, auto) { container->emplace_back(std::move(*value)); }, options);
+		deserializeValueContainer<std::list<TValue>, TValue>(srcStream, dstContainer, [](auto* dstContainer, auto* value, auto) { dstContainer->emplace_back(std::move(*value)); }, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::set<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::set<TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueContainer<std::set<TValue>, TValue>(stream, container, [](auto* container, auto* value, auto) { container->emplace(std::move(*value)); }, options);
+		deserializeValueContainer<std::set<TValue>, TValue>(srcStream, dstContainer, [](auto* dstContainer, auto* value, auto) { dstContainer->emplace(std::move(*value)); }, options);
 	}
 
 	template<class TKey, class TValue>
-	void deserializeValue(std::istream& stream, std::map<TKey, TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::map<TKey, TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueMap<std::map<TKey, TValue>, TKey, TValue>(stream, container, options);
+		deserializeValueMap<std::map<TKey, TValue>, TKey, TValue>(srcStream, dstContainer, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::multiset<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::multiset<TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueContainer<std::multiset<TValue>, TValue>(stream, container, [](auto* container, auto* value, auto) { container->emplace(std::move(*value)); }, options);
+		deserializeValueContainer<std::multiset<TValue>, TValue>(srcStream, dstContainer, [](auto* dstContainer, auto* value, auto) { dstContainer->emplace(std::move(*value)); }, options);
 	}
 
 	template<class TKey, class TValue>
-	void deserializeValue(std::istream& stream, std::multimap<TKey, TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::multimap<TKey, TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueMap<std::multimap<TKey, TValue>, TKey, TValue>(stream, container, options);
+		deserializeValueMap<std::multimap<TKey, TValue>, TKey, TValue>(srcStream, dstContainer, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::unordered_set<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::unordered_set<TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueContainerIt<std::unordered_set<TValue>, TValue>(stream, container, [](auto* container) { return container->begin(); }, [](auto* container, auto* value, auto& it) { it = container->emplace_hint(it, std::move(*value)); }, options);
+		deserializeValueContainerIt<std::unordered_set<TValue>, TValue>(srcStream, dstContainer, [](auto* dstContainer) { return dstContainer->begin(); }, [](auto* dstContainer, auto* value, auto& it) { it = dstContainer->emplace_hint(it, std::move(*value)); }, options);
 	}
 
 	template<class TKey, class TValue>
-	void deserializeValue(std::istream& stream, std::unordered_map<TKey, TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::unordered_map<TKey, TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueMap<std::unordered_map<TKey, TValue>, TKey, TValue>(stream, container, options);
+		deserializeValueMap<std::unordered_map<TKey, TValue>, TKey, TValue>(srcStream, dstContainer, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::unordered_multiset<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::unordered_multiset<TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueContainer<std::unordered_multiset<TValue>, TValue>(stream, container, [](auto* container, auto* value, auto) { container->emplace(std::move(*value)); }, options);
+		deserializeValueContainer<std::unordered_multiset<TValue>, TValue>(srcStream, dstContainer, [](auto* dstContainer, auto* value, auto) { dstContainer->emplace(std::move(*value)); }, options);
 	}
 
 	template<class TKey, class TValue>
-	void deserializeValue(std::istream& stream, std::unordered_multimap<TKey, TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::unordered_multimap<TKey, TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer && !dstContainer->empty()) [[unlikely]]
 		{
-			container->clear();
+			dstContainer->clear();
 		}
-		deserializeValueMap<std::unordered_multimap<TKey, TValue>, TKey, TValue>(stream, container, options);
+		deserializeValueMap<std::unordered_multimap<TKey, TValue>, TKey, TValue>(srcStream, dstContainer, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::stack<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::stack<TValue>* dstContainer, const Options& options)
 	{
 		std::deque<TValue>* deque = nullptr;
-		if (container) [[likely]]
+		if (dstContainer) [[likely]]
 		{
 			deque = new std::deque<TValue>();
 		}
-		deserializeValueContainer<std::deque<TValue>, TValue>(stream, deque, [](auto* container, auto* value, auto) { container->emplace_back(std::move(*value)); }, options);
-		if (container) [[likely]]
+		deserializeValueContainer<std::deque<TValue>, TValue>(srcStream, deque, [](auto* dstContainer, auto* value, auto) { dstContainer->emplace_back(std::move(*value)); }, options);
+		if (dstContainer) [[likely]]
 		{
-			*container = std::stack<TValue>(*deque);
+			*dstContainer = std::stack<TValue>(*deque);
 		}
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::queue<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::queue<TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer) [[likely]]
 		{
-			*container = std::queue<TValue>();
+			*dstContainer = std::queue<TValue>();
 		}
-		deserializeValueContainer<std::queue<TValue>, TValue>(stream, container, [](auto* container, auto* value, auto) { container->emplace(std::move(*value)); }, options);
+		deserializeValueContainer<std::queue<TValue>, TValue>(srcStream, dstContainer, [](auto* dstContainer, auto* value, auto) { dstContainer->emplace(std::move(*value)); }, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(std::istream& stream, std::priority_queue<TValue>* container, Options& options)
+	void deserializeValue(std::istream& srcStream, std::priority_queue<TValue>* dstContainer, const Options& options)
 	{
-		if (container) [[likely]]
+		if (dstContainer) [[likely]]
 		{
-			*container = std::priority_queue<TValue>();
+			*dstContainer = std::priority_queue<TValue>();
 		}
-		deserializeValueContainer<std::priority_queue<TValue>, TValue>(stream, container, [](auto* container, auto* value, auto) { container->emplace(std::move(*value)); }, options);
+		deserializeValueContainer<std::priority_queue<TValue>, TValue>(srcStream, dstContainer, [](auto* dstContainer, auto* value, auto) { dstContainer->emplace(std::move(*value)); }, options);
 	}
 
 	template<class TContainer, class TValue>
-	void deserializeValueContainer(std::istream& stream, TContainer* container, std::function<void(TContainer*, TValue*, std::size_t index)> append, Options& options)
+	void deserializeValueContainer(std::istream& srcStream, TContainer* dstContainer, std::function<void(TContainer*, TValue*, std::size_t index)> append, const Options& options)
 	{
-		int32_t codePoint = 0;
+		uint32_t codePoint = 0;
 		bool first = true;
 		std::size_t index = 0;
 		while (true)
 		{
-			JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-			if (codePoint == EOF) [[unlikely]]
+			readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
+			if (codePoint == JSON_EOF) [[unlikely]]
 			{
 				throw std::runtime_error("json_deserialize_array_truncated");
 			}
@@ -597,8 +667,8 @@ namespace JSON
 					{
 						throw std::runtime_error("json_deserialize_array_invalid([)");
 					}
-					JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-					if (codePoint == EOF) [[unlikely]]
+					readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
+					if (codePoint == JSON_EOF) [[unlikely]]
 					{
 						throw std::runtime_error("json_deserialize_array_truncated");
 					}
@@ -606,37 +676,37 @@ namespace JSON
 						{
 							return;
 						}
-					stream.unget();
+					JSON_UNGET(srcStream, 1);
 					first = false;
 				}
-					if (container) [[likely]]
+					if (dstContainer) [[likely]]
 					{
 						TValue value;
-						deserializeValue(stream, &value, options);
-						append(container, &value, index);
+						deserializeValue(srcStream, &value, options);
+						append(dstContainer, &value, index);
 						index++;
 					}
 					else [[unlikely]]
 					{
-						deserializeValue(stream, static_cast<TValue*>(nullptr), options);
+						deserializeValue(srcStream, static_cast<TValue*>(nullptr), options);
 					}
 		}
 	}
 
 	template<class TContainer, class TValue>
-	void deserializeValueContainerIt(std::istream& stream, TContainer* container, std::function<typename TContainer::iterator(TContainer*)> initIt, std::function<void(TContainer*, TValue*, typename TContainer::iterator&)> append, Options& options)
+	void deserializeValueContainerIt(std::istream& srcStream, TContainer* dstContainer, std::function<typename TContainer::iterator(TContainer*)> initIt, std::function<void(TContainer*, TValue*, typename TContainer::iterator&)> append, const Options& options)
 	{
-		int32_t codePoint = 0;
+		uint32_t codePoint = 0;
 		bool first = true;
 		typename TContainer::iterator it;
-		if (container) [[likely]]
+		if (dstContainer) [[likely]]
 		{
-			it = initIt(container);
+			it = initIt(dstContainer);
 		}
 			while (true)
 			{
-				JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-				if (codePoint == EOF) [[unlikely]]
+				readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
+				if (codePoint == JSON_EOF) [[unlikely]]
 				{
 					throw std::runtime_error("json_deserialize_array_truncated");
 				}
@@ -657,8 +727,8 @@ namespace JSON
 						{
 							throw std::runtime_error("json_deserialize_array_invalid([)");
 						}
-						int bytesCount = JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-						if (codePoint == EOF) [[unlikely]]
+						int32_t bytesCount = readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
+						if (codePoint == JSON_EOF) [[unlikely]]
 						{
 							throw std::runtime_error("json_deserialize_array_truncated");
 						}
@@ -666,31 +736,31 @@ namespace JSON
 							{
 								return;
 							}
-						JSON_UNGET(stream, bytesCount);
+						JSON_UNGET(srcStream, bytesCount);
 						first = false;
 					}
-						if (container) [[likely]]
+						if (dstContainer) [[likely]]
 						{
 							TValue value;
-							deserializeValue(stream, &value, options);
-							append(container, &value, it);
+							deserializeValue(srcStream, &value, options);
+							append(dstContainer, &value, it);
 						}
 						else [[unlikely]]
 						{
-							deserializeValue(stream, static_cast<TValue*>(nullptr), options);
+							deserializeValue(srcStream, static_cast<TValue*>(nullptr), options);
 						}
 			}
 	}
 
 	template<class TContainer, class TKey, class TValue>
-	void deserializeValueMap(std::istream& stream, TContainer* map, Options& options)
+	void deserializeValueMap(std::istream& srcStream, TContainer* dstContainer, const Options& options)
 	{
-		int32_t codePoint = 0;
+		uint32_t codePoint = 0;
 		bool first = true;
 		while (true)
 		{
-			JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-			if (codePoint == EOF) [[unlikely]]
+			readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
+			if (codePoint == JSON_EOF) [[unlikely]]
 			{
 				throw std::runtime_error("json_deserialize_map_truncated");
 			}
@@ -711,8 +781,8 @@ namespace JSON
 					{
 						throw std::runtime_error("json_deserialize_map_invalid({)");
 					}
-					int bytesCount = JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-					if (codePoint == EOF) [[unlikely]]
+					int32_t bytesCount = readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
+					if (codePoint == JSON_EOF) [[unlikely]]
 					{
 						throw std::runtime_error("json_deserialize_map_truncated");
 					}
@@ -720,20 +790,20 @@ namespace JSON
 						{
 							return;
 						}
-					JSON_UNGET(stream, bytesCount);
+					JSON_UNGET(srcStream, bytesCount);
 					first = false;
 				}
 			std::string field;
-			if (map) [[likely]]
+			if (dstContainer) [[likely]]
 			{
-				deserializeValue(stream, &field, options);
+				deserializeValue(srcStream, &field, options);
 			}
 			else [[unlikely]]
 			{
-				deserializeValue(stream, (std::string*)nullptr, options);
+				deserializeValue(srcStream, (std::string*)nullptr, options);
 			}
-			JSON_READ_CHAR_NO_SPACES(stream, codePoint, options.encoding);
-			if (codePoint == EOF) [[unlikely]]
+			readCharNoSpaces(srcStream, codePoint, options.jsonEncoding);
+			if (codePoint == JSON_EOF) [[unlikely]]
 			{
 				throw std::runtime_error("json_deserialize_map_truncated");
 			}
@@ -741,58 +811,58 @@ namespace JSON
 				{
 					throw std::runtime_error("json_deserialize_map_invalid(:)");
 				}
-					if (map) [[likely]]
+					if (dstContainer) [[likely]]
 					{
 						TKey key;
 						std::istringstream stream2(field);
 						stream2 >> key;
 						TValue value;
-						deserializeValue(stream, &value, options);
-						map->insert({ key , value });
+						deserializeValue(srcStream, &value, options);
+						dstContainer->insert({ key , value });
 					}
 					else [[unlikely]]
 					{
-						deserializeValue(stream, (TValue*)nullptr, options);
+						deserializeValue(srcStream, (TValue*)nullptr, options);
 					}
 		}
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, TValue* value2)
+	void deserializeValue(const Value& srcValue, TValue* dstValue, const Options& options)
 	{
-		value2->fromJSON(value);
+		dstValue->fromJSON(srcValue, options);
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::optional<TValue>* optional)
+	void deserializeValue(const Value& srcValue, std::optional<TValue>* dstOptional, const Options& options)
 	{
-		if (value == Type::Null) [[likely]]
+		if (srcValue == Type::Null) [[likely]]
 		{
-			if (*optional) [[unlikely]]
+			if (*dstOptional) [[unlikely]]
 			{
-				*optional = std::nullopt;
+				*dstOptional = std::nullopt;
 			}
 		}
 		else [[unlikely]]
 		{
-			if (!*optional) [[likely]]
+			if (!*dstOptional) [[likely]]
 			{
-				*optional = TValue();
-				deserializeValue(value, &**optional);
+				*dstOptional = TValue();
+				deserializeValue(srcValue, &**dstOptional, options);
 			}
 		}
 	}
 
 	template<class TValue, std::size_t TSize>
-	void deserializeValue(const Value& value, std::array<TValue, TSize>* container)
+	void deserializeValue(const Value& srcValue, std::array<TValue, TSize>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
 			std::size_t index = 0;
-			for (auto& item : *value.ptrArray)
+			for (auto& item : *srcValue.ptrArray)
 			{
-				auto& value2 = (*container)[index];
-				deserializeValue(item, &value2);
+				auto& value2 = (*dstContainer)[index];
+				deserializeValue(item, &value2, options);
 				index++;
 			}
 			return;
@@ -801,16 +871,16 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::vector<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::vector<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			container->resize(value.ptrArray->size());
+			dstContainer->resize(srcValue.ptrArray->size());
 			std::size_t index = 0;
-			for (auto& item : *value.ptrArray)
+			for (auto& item : *srcValue.ptrArray)
 			{
-				auto& value2 = (*container)[index];
-				deserializeValue(item, &value2);
+				auto& value2 = (*dstContainer)[index];
+				deserializeValue(item, &value2, options);
 				index++;
 			}
 			return;
@@ -819,16 +889,16 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::deque<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::deque<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			container->resize(value.ptrArray->size());
+			dstContainer->resize(srcValue.ptrArray->size());
 			std::size_t index = 0;
-			for (auto& item : *value.ptrArray)
+			for (auto& item : *srcValue.ptrArray)
 			{
-				auto& value2 = (*container)[index];
-				deserializeValue(item, &value2);
+				auto& value2 = (*dstContainer)[index];
+				deserializeValue(item, &value2, options);
 				index++;
 			}
 			return;
@@ -837,16 +907,16 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::forward_list<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::forward_list<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			container->resize(value.ptrArray->size());
-			auto it = container->begin();
-			for (auto& item : *value.ptrArray)
+			dstContainer->resize(srcValue.ptrArray->size());
+			auto it = dstContainer->begin();
+			for (auto& item : *srcValue.ptrArray)
 			{
 				auto& value2 = *it;
-				deserializeValue(item, &value2);
+				deserializeValue(item, &value2, options);
 				it++;
 			}
 			return;
@@ -855,16 +925,16 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::list<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::list<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			container->resize(value.ptrArray->size());
-			auto it = container->begin();
-			for (auto& item : *value.ptrArray)
+			dstContainer->resize(srcValue.ptrArray->size());
+			auto it = dstContainer->begin();
+			for (auto& item : *srcValue.ptrArray)
 			{
 				auto& value2 = *it;
-				deserializeValue(item, &value2);
+				deserializeValue(item, &value2, options);
 				it++;
 			}
 			return;
@@ -873,15 +943,15 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::set<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::set<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.ptrArray)
+			for (auto& item : *srcValue.ptrArray)
 			{
 				TValue value2;
-				deserializeValue(item, &value2);
-				container->emplace(std::move(value2));
+				deserializeValue(item, &value2, options);
+				dstContainer->emplace(std::move(value2));
 			}
 			return;
 		}
@@ -889,14 +959,14 @@ namespace JSON
 	}
 
 	template<class TKey, class TValue>
-	void deserializeValue(const Value& value, std::map<TKey, TValue>* container)
+	void deserializeValue(const Value& srcValue, std::map<TKey, TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Object) [[likely]]
+		if (srcValue == Type::Object) [[likely]]
 		{
-			for (auto& pair : *value.ptrObject)
+			for (auto& pair : *srcValue.ptrObject)
 			{
-				auto& value2 = (*container)[pair.first];
-				deserializeValue(pair.second, &value2);
+				auto& value2 = (*dstContainer)[pair.first];
+				deserializeValue(pair.second, &value2, options);
 			}
 			return;
 		}
@@ -904,15 +974,15 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::multiset<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::multiset<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.ptrArray)
+			for (auto& item : *srcValue.ptrArray)
 			{
 				TValue value2;
-				deserializeValue(item, &value2);
-				container->emplace(std::move(value2));
+				deserializeValue(item, &value2, options);
+				dstContainer->emplace(std::move(value2));
 			}
 			return;
 		}
@@ -920,15 +990,15 @@ namespace JSON
 	}
 
 	template<class TKey, class TValue>
-	void deserializeValue(const Value& value, std::multimap<TKey, TValue>* container)
+	void deserializeValue(const Value& srcValue, std::multimap<TKey, TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Object) [[likely]]
+		if (srcValue == Type::Object) [[likely]]
 		{
-			for (auto& pair : *value.ptrObject)
+			for (auto& pair : *srcValue.ptrObject)
 			{
 				TValue value2;
-				deserializeValue(pair.second, &value2);
-				container->emplace(pair.first, std::move(value2));
+				deserializeValue(pair.second, &value2, options);
+				dstContainer->emplace(pair.first, std::move(value2));
 			}
 			return;
 		}
@@ -936,15 +1006,15 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::unordered_set<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::unordered_set<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.ptrArray)
+			for (auto& item : *srcValue.ptrArray)
 			{
 				TValue value2;
-				deserializeValue(item, &value2);
-				container->emplace(std::move(value2));
+				deserializeValue(item, &value2, options);
+				dstContainer->emplace(std::move(value2));
 			}
 			return;
 		}
@@ -952,14 +1022,14 @@ namespace JSON
 	}
 
 	template<class TKey, class TValue>
-	void deserializeValue(const Value& value, std::unordered_map<TKey, TValue>* container)
+	void deserializeValue(const Value& srcValue, std::unordered_map<TKey, TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Object) [[likely]]
+		if (srcValue == Type::Object) [[likely]]
 		{
-			for (auto& pair : *value.ptrObject)
+			for (auto& pair : *srcValue.ptrObject)
 			{
-				auto& value2 = (*container)[pair.first];
-				deserializeValue(pair.second, &value2);
+				auto& value2 = (*dstContainer)[pair.first];
+				deserializeValue(pair.second, &value2, options);
 			}
 			return;
 		}
@@ -967,15 +1037,15 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::unordered_multiset<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::unordered_multiset<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.ptrArray)
+			for (auto& item : *srcValue.ptrArray)
 			{
 				TValue value2;
-				deserializeValue(item, &value2);
-				container->emplace(std::move(value2));
+				deserializeValue(item, &value2, options);
+				dstContainer->emplace(std::move(value2));
 			}
 			return;
 		}
@@ -983,15 +1053,15 @@ namespace JSON
 	}
 
 	template<class TKey, class TValue>
-	void deserializeValue(const Value& value, std::unordered_multimap<TKey, TValue>* container)
+	void deserializeValue(const Value& srcValue, std::unordered_multimap<TKey, TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Object) [[likely]]
+		if (srcValue == Type::Object) [[likely]]
 		{
-			for (auto& pair : *value.ptrObject)
+			for (auto& pair : *srcValue.ptrObject)
 			{
 				TValue value2;
-				deserializeValue(pair.second, &value2);
-				container->emplace(pair.first, std::move(value2));
+				deserializeValue(pair.second, &value2, options);
+				dstContainer->emplace(pair.first, std::move(value2));
 			}
 			return;
 		}
@@ -999,15 +1069,15 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::stack<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::stack<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.ptrArray)
+			for (auto& item : *srcValue.ptrArray)
 			{
 				TValue value2;
-				deserializeValue(item, &value2);
-				container->emplace(std::move(value2));
+				deserializeValue(item, &value2, options);
+				dstContainer->emplace(std::move(value2));
 			}
 			return;
 		}
@@ -1015,15 +1085,15 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::queue<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::queue<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.ptrArray)
+			for (auto& item : *srcValue.ptrArray)
 			{
 				TValue value2;
-				deserializeValue(item, &value2);
-				container->emplace(std::move(value2));
+				deserializeValue(item, &value2, options);
+				dstContainer->emplace(std::move(value2));
 			}
 			return;
 		}
@@ -1031,15 +1101,15 @@ namespace JSON
 	}
 
 	template<class TValue>
-	void deserializeValue(const Value& value, std::priority_queue<TValue>* container)
+	void deserializeValue(const Value& srcValue, std::priority_queue<TValue>* dstContainer, const Options& options)
 	{
-		if (value == Type::Array) [[likely]]
+		if (srcValue == Type::Array) [[likely]]
 		{
-			for (auto& item : *value.ptrArray)
+			for (auto& item : *srcValue.ptrArray)
 			{
 				TValue value2;
-				deserializeValue(item, &value2);
-				container->emplace(std::move(value2));
+				deserializeValue(item, &value2, options);
+				dstContainer->emplace(std::move(value2));
 			}
 			return;
 		}
