@@ -371,21 +371,14 @@ struct DoubleParts
 void testUnicodeChar(uint32_t codePoint)
 {
 	{
-		std::cout << "CodePoint :\t0x" << std::uppercase << std::setfill('0') << std::hex << std::setw(8) << codePoint << " [ ";
-		uint8_t* byteArray = (uint8_t*)&codePoint;
-		for (int32_t i = 0; i < 4; i++)
-		{
-			uint8_t byte = byteArray[i];
-			std::cout << std::setw(2) << static_cast<uint16_t>(byte) << ' ';
-		}
-		std::cout << ']' << std::endl;
+		std::cout << "CodePoint :\t0x" << std::uppercase << std::setfill('0') << std::hex << std::setw(8) << codePoint << std::endl;
 	}
 
 	{
 		uint32_t unicode = JSON::codePointToUtf8(codePoint);
 		std::string bytesStr;
 		JSON::serializeCodePointChar(bytesStr, codePoint, JSON::Encoding::UTF8);
-		std::cout << "UTF-8 :\t\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
+		std::cout << "UTF-8 :\t\t0x" << unicode  << std::endl;
 		uint32_t codePoint2 = JSON::utf8ToCodePoint(unicode);
 		assert(codePoint == codePoint2);
 	}
@@ -394,7 +387,7 @@ void testUnicodeChar(uint32_t codePoint)
 		uint32_t unicode = JSON::codePointToUtf16(codePoint, JSON::Encoding::BigEndian);
 		std::string bytesStr;
 		JSON::serializeCodePointChar(bytesStr, codePoint, JSON::Encoding::UTF16BE);
-		std::cout << "UTF-16BE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
+		std::cout << "UTF-16BE :\t0x" << unicode << std::endl;
 		uint32_t codePoint2 = JSON::utf16ToCodePoint(unicode, JSON::Encoding::BigEndian);
 		assert(codePoint == codePoint2);
 	}
@@ -403,7 +396,7 @@ void testUnicodeChar(uint32_t codePoint)
 		uint32_t unicode = JSON::codePointToUtf16(codePoint, JSON::Encoding::LittleEndian);
 		std::string bytesStr;
 		JSON::serializeCodePointChar(bytesStr, codePoint, JSON::Encoding::UTF16LE);
-		std::cout << "UTF-16LE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
+		std::cout << "UTF-16LE :\t0x" << unicode << std::endl;
 		uint32_t codePoint2 = JSON::utf16ToCodePoint(unicode, JSON::Encoding::LittleEndian);
 		assert(codePoint == codePoint2);
 	}
@@ -412,7 +405,7 @@ void testUnicodeChar(uint32_t codePoint)
 		uint32_t unicode = JSON::codePointToUtf32(codePoint, JSON::Encoding::BigEndian);
 		std::string bytesStr;
 		JSON::serializeCodePointChar(bytesStr, codePoint, JSON::Encoding::UTF32BE);
-		std::cout << "UTF-32BE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
+		std::cout << "UTF-32BE :\t0x" << unicode << std::endl;
 		uint32_t codePoint2 = JSON::utf32ToCodePoint(unicode, JSON::Encoding::BigEndian);
 		assert(codePoint == codePoint2);
 	}
@@ -421,7 +414,7 @@ void testUnicodeChar(uint32_t codePoint)
 		uint32_t unicode = JSON::codePointToUtf32(codePoint, JSON::Encoding::LittleEndian);
 		std::string bytesStr;
 		JSON::serializeCodePointChar(bytesStr, codePoint, JSON::Encoding::UTF32LE);
-		std::cout << "UTF-32LE :\t0x" << unicode << " [ " << bytesStr << ']' << std::endl;
+		std::cout << "UTF-32LE :\t0x" << unicode << std::endl;
 		uint32_t codePoint2 = JSON::utf32ToCodePoint(unicode, JSON::Encoding::LittleEndian);
 		assert(codePoint == codePoint2);
 	}
@@ -446,7 +439,7 @@ struct TestJsonUtf8bom
 struct TestJsonUtf16BE
 {
 	std::string myStr;
-	
+
 	JSON(JSON::Field("UTF16BE", JSON::Encoding::UTF16BE), myStr);
 };
 
@@ -851,7 +844,7 @@ void testJsonUnicode()
 
 	// JSON::Value testJsonUtf8Bom(JSON::Encoding::UTF8);
 	testJson<TestJsonUtf8bom>("UTF8BOM.json", "UTF8BOM_2.json", JSON::Encoding::UTF8);
-	
+
 	// JSON::Value testJsonUtf16Be(JSON::Encoding::UTF16BE);
 	testJson<TestJsonUtf16BE>("UTF16BE.json", "UTF16BE_2.json", JSON::Encoding::UTF16BE);
 

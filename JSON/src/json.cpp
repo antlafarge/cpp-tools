@@ -367,7 +367,7 @@ namespace JSON
 		return *this;
 	}
 
-	Value& Value::operator=(nullptr_t)
+	Value& Value::operator=(const std::nullptr_t)
 	{
 		return *this = Type::Null;
 	}

@@ -298,10 +298,6 @@ namespace JSON
 
 	void serializeCodePointChar(std::ostream& dstStream, uint32_t codePoint, Encoding dstEncoding)
 	{
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-		std::cout << std::hex << std::uppercase << std::setfill('0');
-#endif
-
 		uint32_t unicode = codePointToUnicode(codePoint, dstEncoding);
 
 		if (dstEncoding <= Encoding::UTF8 && unicode < 0x80) [[likely]]
@@ -351,9 +347,6 @@ namespace JSON
 			}
 				if (started) [[unlikely]]
 				{
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-					std::cout << std::setw(2) << static_cast<uint16_t>(byte) << ' ';
-#endif
 					dstStream << byte;
 				}
 		}
@@ -368,10 +361,6 @@ namespace JSON
 
 	void serializeCodePointChar(std::wostream& dstStream, uint32_t codePoint, Encoding dstEncoding)
 	{
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-		std::cout << std::hex << std::uppercase << std::setfill('0');
-#endif
-
 		if (dstEncoding == Encoding::Unknown) [[unlikely]]
 		{
 			dstEncoding = JSON_DEFAULT_ENCODING_WSTRING;
@@ -395,10 +384,6 @@ namespace JSON
 				wchar_t wc = (wchar_t)byteArray[i];
 				if (wc || started || i == (end - increment)) [[unlikely]]
 				{
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-					std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
-					std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
-#endif
 					dstStream << wc;
 					started = true;
 				}
@@ -416,11 +401,6 @@ namespace JSON
 			for (int32_t i = start; i != end; i += increment)
 			{
 				wchar_t wc = ((uint16_t*)&unicode)[i];
-
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-				std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
-				std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
-#endif
 				dstStream << wc;
 			}
 		}
@@ -438,10 +418,6 @@ namespace JSON
 
 				if (i == (end - increment) || wc) [[unlikely]]
 				{
-#if defined(JSON_DEBUG) && JSON_DEBUG != false
-					std::cout << std::setw(2) << static_cast<uint16_t>(wc & 0xFF) << '_';
-					std::cout << std::setw(2) << static_cast<uint16_t>((wc & 0xFF00) >> 8) << ' ';
-#endif
 					dstStream << wc;
 				}
 			}

@@ -2,14 +2,21 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: g++.exe générer le fichier actif",
+            "label": "C/C++: g++.exe build active file",
             "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
             "args": [
                 "-fdiagnostics-color=always",
+                "-Werror",
+                "-Wall",
+                "-Wextra",
+                "-Wno-unknown-pragmas",
                 "-g",
-                "${file}",
+                "-Isrc",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${fileDirname}\\json.exe",
+                //"${file}",
+                "${fileDirname}\\**.cpp",
+                "${fileDirname}\\..\\src\\**.cpp"
             ],
             "options": {
                 "cwd": "${fileDirname}"
