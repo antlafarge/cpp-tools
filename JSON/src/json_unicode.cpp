@@ -798,6 +798,7 @@ namespace JSON
 
 	int32_t readChar(std::wistream& srcStream, uint32_t& codePoint, Encoding srcEncoding)
 	{
+		static constexpr uint16_t JSON_WEOF = static_cast<uint16_t>(WEOF);
 		int32_t size = 0;
 		uint32_t& unicode = codePoint = 0;
 		size = 0;
@@ -807,8 +808,8 @@ namespace JSON
 			for (int32_t i = 0; i < 1; i++)
 			{
 				size++;
-				b = srcStream.get();
-				if (b == WEOF) [[unlikely]]
+				b = static_cast<uint16_t>(srcStream.get());
+				if (b == JSON_WEOF) [[unlikely]]
 				{
 					codePoint = JSON_EOF;
 					return 0;
@@ -835,25 +836,25 @@ namespace JSON
 		{
 			size = 4;
 			uint16_t b1 = srcStream.get();
-			if (b1 == JSON_EOF) [[unlikely]]
+			if (b1 == JSON_WEOF) [[unlikely]]
 			{
 				codePoint = JSON_EOF;
 				return 0;
 			}
 			uint32_t b2 = srcStream.get();
-			if (b2 == JSON_EOF) [[unlikely]]
+			if (b2 == JSON_WEOF) [[unlikely]]
 			{
 				codePoint = JSON_EOF;
 				return 1;
 			}
 			uint32_t b3 = srcStream.get();
-			if (b3 == JSON_EOF) [[unlikely]]
+			if (b3 == JSON_WEOF) [[unlikely]]
 			{
 				codePoint = JSON_EOF;
 				return 2;
 			}
 			uint32_t b4 = srcStream.get();
-			if (b4 == JSON_EOF) [[unlikely]]
+			if (b4 == JSON_WEOF) [[unlikely]]
 			{
 				codePoint = JSON_EOF;
 				return 3;

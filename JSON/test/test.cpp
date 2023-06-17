@@ -458,7 +458,7 @@ struct TestJsonUtf16LE
 };
 
 template<class T>
-void testJson(const std::string& sourceFileName, const std::string& targetFileName, JSON::Encoding writeEncoding = JSON::Encoding::None)
+void testJson(const std::string& sourceFileName, const std::string& targetFileName, JSON::Encoding writeEncoding = JSON::Encoding::Unknown)
 {
 	std::cout << sourceFileName << " => " << targetFileName << std::endl;
 	T object;
