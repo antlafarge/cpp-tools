@@ -1,5 +1,5 @@
-#include "optional.polyfill.h"
-#include "json_definitions.h"
+#include "../src/optional.polyfill.h"
+#include "../src/json_definitions.h"
 
 #include <bitset>
 #include <cassert>
@@ -139,7 +139,7 @@ namespace JSON
 	}
 }
 
-#include "json_implementations.h"
+#include "../src/json_implementations.h"
 
 template<class TValue>
 bool operator==(const std::priority_queue<TValue>& left, const std::priority_queue<TValue>& right)

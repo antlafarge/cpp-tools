@@ -302,7 +302,7 @@ namespace JSON
 
 		Value& operator=(Value&& other) noexcept;
 
-		Value& operator=(nullptr_t);
+		Value& operator=(const std::nullptr_t);
 
 		Value& operator=(const Type srcType);
 
