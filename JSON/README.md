@@ -21,7 +21,7 @@ struct Sample
 	JSON(
 		"NullField", null,
 		"WorkingField", working,
-		JSON::Field("PiField", 2), pi, // Set float precision to 2 digits
+		JSON::Field("PiField", 3), pi, // Set float precision to 2 digits
 		"ProverbField", proverb,
 		"FibonacciField", fibonacci
 	);
@@ -35,6 +35,7 @@ You should use the types declared in [cstdint](https://en.cppreference.com/w/cpp
 ```cpp
 Sample object{ {}, { true }, 3.1415926535, "Haste makes waste", { 0,1,1,2,3,5,8,13,21,34 } };
 std::string json = JSON::serialize(object);
+std::cout << json << std::endl; // {"NullField":null,"WorkingField":true,"PiField":3.14,"ProverbField":"Haste makes waste","FibonacciField":[0,1,1,2,3,5,8,13,21,34]}
 ```
 
 Expected JSON output (formatted for display) :
@@ -95,6 +96,7 @@ void testCustomDeSerializationFunctions()
 {
 	std::bitset<2> bs{ 0xA };
 	std::string json = JSON::serialize(bs);
+	std::cout << json << std::endl; // "10"
 
 	std::bitset<2> bs2;
 	JSON::deserialize(json, bs2);
@@ -109,13 +111,13 @@ void testCustomDeSerializationFunctions()
 #include <fstream>
 #include "json.h"
 
-std::map<std::string, std::string> data{ { "Field", "Value" } };
-
 // Write to file
+std::map<std::string, std::string> data { { "Field", "Value" } };
 JSON::serialize(std::ofstream("data.json"), data);
 
 // Read from file
-JSON::deserialize(std::ifstream("data.json"), data);
+std::map<std::string, std::string> data2;
+JSON::deserialize(std::ifstream("data.json"), data2);
 ```
 
 # Not typed (de)serialization
@@ -123,14 +125,23 @@ JSON::deserialize(std::ifstream("data.json"), data);
 If you want to keep dynamic JSON data in your program, you can use the class `JSON::Value`.
 
 ```cpp
-JSON::Value jsValue(3.14);
-std::string json = JSON::serialize(jsValue);
+auto jsValue = JSON::Value::createObject();
+jsValue.getObject()["PI"] = JSON::Value(3.14159);
+int32_t precision = 3;
+std::string json = JSON::serialize(jsValue, JSON::Options(precision));
+
+std::cout << json << std::endl; // {"PI":3.14}
 
 JSON::Value jsValue2;
 JSON::deserialize(json, jsValue2);
 
-if (jsValue2.type == JSON::Type::NumberFloat)
+if (jsValue2 == JSON::Type::Object)
 {
-	float pi = (float)(*jsValue2.data.number_f);
+	auto it = jsValue2.getObject().find("PI");
+	if (it != jsValue2.getObject().end())
+	{
+		float pi = (float)it->second.getNumberF();
+		std::cout << pi << std::endl; // 3.14
+	}
 }
 ```

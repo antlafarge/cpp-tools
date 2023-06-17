@@ -17,8 +17,8 @@ Base64
 void encodeData()
 {
 	uint8_t byteArray[10] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	auto encodedData1 = Base64::encode(byteArray, 10);
-	std::cout << encodedData1 << std::endl; // AAECAwQFBgcICQ==
+	std::string encodedData = Base64::encode(byteArray, 10);
+	std::cout << encodedData << std::endl; // AAECAwQFBgcICQ==
 }
 ```
 
@@ -30,8 +30,8 @@ void encodeData()
 
 void encodeData()
 {
-	std::vector<uint8_t> data = { 3, 2, 1, 0 };
-	auto encodedData = Base64::encode(data.data(), data.size());
+	std::vector<uint8_t> byteVector = { 3, 2, 1, 0 };
+	std::string encodedData = Base64::encode(byteVector);
 	std::cout << encodedData << std::endl; // AwIBAA==
 }
 ```
@@ -44,8 +44,8 @@ void encodeData()
 
 void encodeData()
 {
-	std::string data = "A string to encode";
-	auto encodedData = Base64::encode(data.data(), data.size());
+	std::string byteString = "A string to encode";
+	std::string encodedData = Base64::encode(byteString);
 	std::cout << encodedData << std::endl; // QSBzdHJpbmcgdG8gZW5jb2Rl
 }
 ```
@@ -59,8 +59,8 @@ void encodeData()
 
 void encodeData()
 {
-	const char* data = "A c-string to encode";
-	auto encodedData = Base64::encode(data, strlen(data));
+	const char* byteCString = "A c-string to encode";
+	std::string encodedData = Base64::encode(byteCString, strlen(byteCString));
 	std::cout << encodedData << std::endl; // QSBjLXN0cmluZyB0byBlbmNvZGU=
 }
 ```
@@ -158,24 +158,47 @@ catch (const std::exception& ex)
 }
 ```
 
+# Warning codes
+
+If you get a warning as a result, the data was successfully processed, but the result data might be invalid  
+When using high-level functions (from `base64.helpers.h`), the warnings are lost because errors handling is done by catching exceptions
+
+## 1 MissingPaddingCharacters (0x01)
+
+Missing base64 padding characters  
+Warning indicating base64 string might be truncated  
+For example `QQ` or `QQ=` (instead of `QQ==`) decoding result will be `A` with a warning `MissingPaddingCharacters`  
+For example `QUI` (instead of `QQI=`) decoding result will be `AB` with a warning `MissingPaddingCharacters`
+
+## 2 InvalidPaddingBits (0x02)
+
+Invalid padding bits  
+Padding bits are not equal to 0  
+Warning indicating base64 string might be truncated  
+For example `QR==` (instead of `QQ==`) decoding result will be `A` with a warning `InvalidPaddingBits`  
+For example `QUJ=` (instead of `QUI=`) decoding result will be `AB` with a warning `InvalidPaddingBits`
+
+## 3 MissingPaddingCharactersAndInvalidPaddingBits (0x03)
+
+Aggregation of MissingPadding and InvalidPaddingBits warnings  
+cf. MissingPaddingCharacters  
+cf. InvalidPaddingBits  
+For example `QR` or `QR=` (instead of `QQ==`) decoding result will be `A` with a warning `MissingPaddingCharactersAndInvalidPaddingBits`  
+For example `QUJ` (instead of `QUI=`) decoding result will be `AB` with a warning `MissingPaddingCharactersAndInvalidPaddingBits`
+
 # Error codes
 
-## 1 MissingPadding *(Warning)*
+## 32 InvalidDestinationBufferSize (0x20)
 
-    Warning indicating missing base64 padding characters  
-    This is not an error, this is a warning, decoding succeed
+Destination buffer size too small  
+Allocate greater destination buffer
 
-## 32 InvalidDestinationBufferSize
+## 96 InvalidSourceBufferSize (0x60)
 
-    Destination buffer size too small  
-    Allocate greater destination buffer
+Invalid source buffer size  
+Base64 encoded data size must be a multiple of 4
 
-## 96 InvalidSourceBufferSize
+## 97 InvalidCharacter (0x61)
 
-    Invalid source buffer size  
-    Base64 encoded data size must be a multiple of 4
-
-## 97 InvalidCharacter
-
-    Invalid base64 character
-    Source data is not a valid base64 encoded string
+Invalid base64 character  
+Source data is not a valid base64 encoded string

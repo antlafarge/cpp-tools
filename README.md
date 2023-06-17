@@ -5,8 +5,9 @@ Set of cpp tools
 ## Sub-Projects
 
 - [Base64](https://github.com/antlafarge/cpp-tools/tree/main/Base64)
-- [JSON](https://github.com/antlafarge/cpp-tools/tree/main/JSON)
 - [ConcurrentResource](https://github.com/antlafarge/cpp-tools/tree/main/Concurrent)
+- [UUID](https://github.com/antlafarge/cpp-tools/tree/main/UUID)
+- [JSON](https://github.com/antlafarge/cpp-tools/tree/main/JSON)
 
 ## Visual studio code C++ installation
 
@@ -26,11 +27,12 @@ https://code.visualstudio.com/docs/cpp/config-mingw
 
 ## WSL 2
 
-- Run `wsl –install -d ubuntu` in powershell (elevated)
+- Run `wsl --install -d Ubuntu` in powershell (elevated)
 - Reboot Windows
 - Fill in Ubuntu credentials
 - Full update Ubuntu `sudo apt update && sudo apt full-upgrade -y && sudo apt autoremove -y`
 - Install g++ `sudo apt install g++ -y`
-- Install g++ (for ppc64) `sudo apt install g++-10-powerpc64-linux-gnu qemu-user -y`
+- Install g++ (for ppc64) `sudo apt install g++-powerpc64-linux-gnu qemu-user -y`
 - Test
     - `g++ --version`
+    - `powerpc64-linux-gnu-g++ --version`

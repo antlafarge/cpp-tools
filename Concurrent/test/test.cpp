@@ -3,11 +3,9 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
+#include <string>
 #include <thread>
 #include <vector>
-// #if defined(_MSC_VER)
-// #	include <Windows.h>
-// #endif
 
 using namespace std::chrono_literals;
 
