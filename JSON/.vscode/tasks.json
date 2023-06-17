@@ -2,7 +2,7 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: g++.exe build active file",
+            "label": "C/C++: g++.exe build",
             "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
             "args": [
                 "-fdiagnostics-color=always",
@@ -13,13 +13,12 @@
                 "-g",
                 "-Isrc",
                 "-o",
-                "${fileDirname}\\json.exe",
-                //"${file}",
-                "${fileDirname}\\**.cpp",
-                "${fileDirname}\\..\\src\\**.cpp"
+                "${workspaceFolder}\\json.exe",
+                "${workspaceFolder}\\src\\**.cpp",
+                "${workspaceFolder}\\test\\**.cpp"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"
