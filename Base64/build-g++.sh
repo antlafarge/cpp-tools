@@ -6,11 +6,11 @@ if [[ "$1" == "build" || $# -eq 0 ]]; then
         -Werror -Wall -Wextra -Wno-unknown-pragmas \
         -g \
         -Isrc \
-        -o test.bin \
+        -o base64.bin \
         src/*.cpp test/test.cpp
 fi
 
 if [[ ($? -eq 0) && ("$1" == "run" || $# -eq 0) ]]; then
     echo "========= Run ==========="
-    ./test.bin
+    ./base64.bin
 fi
