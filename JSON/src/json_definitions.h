@@ -1,6 +1,5 @@
 #pragma once
 
-#include "optional.polyfill.h"
 #include "json_unicode.h"
 
 #include <array>
@@ -10,6 +9,7 @@
 #include <functional>
 #include <list>
 #include <map>
+#include <optional>
 #include <queue>
 #include <set>
 #include <stack>

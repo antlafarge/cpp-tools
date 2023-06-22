@@ -36,3 +36,7 @@ https://code.visualstudio.com/docs/cpp/config-mingw
 - Test
     - `g++ --version`
     - `powerpc64-linux-gnu-g++ --version`
+
+### Default G++ STD version
+
+`g++ -dM -E -x c++  /dev/null | grep -F __cplusplus`

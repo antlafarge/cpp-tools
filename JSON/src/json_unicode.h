@@ -1,7 +1,5 @@
 #pragma once
 
-#include "optional.polyfill.h"
-
 #include <cstdint>
 #include <iostream>
 

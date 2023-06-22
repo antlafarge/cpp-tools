@@ -1,4 +1,3 @@
-#include "../src/optional.polyfill.h"
 #include "../src/json_definitions.h"
 
 #include <bitset>
@@ -462,46 +461,6 @@ void testJson(const std::string& sourceFileName, const std::string& targetFileNa
 	assert(valid);
 }
 
-void testOptional()
-{
-	std::cout << "optional" << std::endl;
-
-	std::optional<int> opt;
-	assert(!opt.has_value());
-
-	opt = 1337;
-	assert(opt.has_value());
-
-	assert(*opt == 1337);
-
-	assert(!(std::optional<int>() == std::optional<int>(1337)));
-	assert(std::optional<int>(1337) == std::optional<int>(1337));
-	assert(!(std::optional<int>(1337) == std::optional<int>(1338)));
-
-	assert(std::optional<int>() != std::optional<int>(1337));
-	assert(!(std::optional<int>(1337) != std::optional<int>(1337)));
-	assert(std::optional<int>(1337) != std::optional<int>(1338));
-
-	assert(std::optional<int>() < std::optional<int>(1337));
-	assert(!(std::optional<int>(1337) < std::optional<int>(1337)));
-	assert(std::optional<int>(1337) < std::optional<int>(1338));
-
-	assert(std::optional<int>() <= std::optional<int>(1337));
-	assert(std::optional<int>(1337) <= std::optional<int>(1337));
-	assert(std::optional<int>(1337) <= std::optional<int>(1338));
-
-	assert(!(std::optional<int>() > std::optional<int>(1337)));
-	assert(!(std::optional<int>(1337) > std::optional<int>(1337)));
-	assert(!(std::optional<int>(1337) > std::optional<int>(1338)));
-
-	assert(!(std::optional<int>() >= std::optional<int>(1337)));
-	assert(std::optional<int>(1337) >= std::optional<int>(1337));
-	assert(!(std::optional<int>(1337) >= std::optional<int>(1338)));
-
-	std::cout << "PASSED" << std::endl
-		<< std::endl;
-}
-
 void testUnicode()
 {
 	testUnicodeChar(0x00000041);
@@ -854,7 +813,6 @@ void testJsonUnicode()
 
 int main()
 {
-	testOptional();
 	testUnicode();
 	testJsonBasic();
 	testJsonFloat();
