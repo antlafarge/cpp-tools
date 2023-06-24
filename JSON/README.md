@@ -30,12 +30,28 @@ struct Sample
 You should use the types declared in [cstdint](https://en.cppreference.com/w/cpp/header/cstdint).  
 *The JSON macro supports up to 50 fields by object (this limitation can be increased manually in the [macros](https://github.com/antlafarge/cpp-tools/blob/main/JSON/src/json_definitions.h#L26)).*
 
-## Serialization
+## (De)serialization
 
 ```cpp
-Sample object{ {}, { true }, 3.1415926535, "Haste makes waste", { 0,1,1,2,3,5,8,13,21,34 } };
-std::string json = JSON::serialize(object);
-std::cout << json << std::endl; // {"NullField":null,"WorkingField":true,"PiField":3.14,"ProverbField":"Haste makes waste","FibonacciField":[0,1,1,2,3,5,8,13,21,34]}
+void testDeSerialization()
+{
+	std::string json;
+
+	// Serialization
+	{
+		Sample object{ {}, { true }, 3.1415926535, "Haste makes waste", { 0,1,1,2,3,5,8,13,21,34 } };
+		Sample object2{ {}, { true }, 3.1415926535, "Haste makes waste", { 0,1,1,2,3,5,8,13,21,34 } };
+
+		json = JSON::serialize(object);
+		std::cout << json << std::endl; // {"NullField":null,"WorkingField":true,"PiField":3.14,"ProverbField":"Haste makes waste","FibonacciField":[0,1,1,2,3,5,8,13,21,34]}
+	}
+
+	// Deserialization
+	{
+		Sample object2;
+		JSON::deserialize(json, object2);
+	}
+}
 ```
 
 Expected JSON output (formatted for display) :
@@ -49,13 +65,6 @@ Expected JSON output (formatted for display) :
 }
 ```
 
-## Deserialization
-
-```cpp
-Sample object2;
-JSON::deserialize(json, object2);
-```
-
 # External object (de)serialization
 
 If you want to (de)serialize an external object that you can't modify, you can implement custom (de)serialization functions.  
@@ -66,26 +75,32 @@ Instead of including `json.h`, you have to include :
 ```cpp
 #include "json_definitions.h"
 
+#include <bitset>
+#include <cassert>
+
 namespace JSON
 {
 	template<std::size_t TBitsetSize>
-	void serializeValue(std::ostream& stream, const std::bitset<TBitsetSize>* value, const Field* field = nullptr)
+	void serializeValue(std::ostream& dstStream, const std::bitset<TBitsetSize>* srcValue, const Options& options = Options())
 	{
-		stream << '"' << value->to_string() << '"';
+		serializeCodePointChar(dstStream, '"', options.jsonEncoding);
+		convert(dstStream, srcValue->to_string(), options.jsonEncoding, JSON::Encoding::UTF8);
+		serializeCodePointChar(dstStream, '"', options.jsonEncoding);
 	}
 
 	template<std::size_t TBitsetSize>
-	void deserializeValue(std::istream& stream, std::bitset<TBitsetSize>* value)
+	void deserializeValue(std::istream& srcStream, std::bitset<TBitsetSize>* dstValue, const Options& options = Options())
 	{
-		if (value != nullptr)
+		if (dstValue != nullptr)
 		{
-			std::string data;
-			JSON::deserializeValue(stream, &data);
-			(* value) = std::bitset<TBitsetSize>(data);
+			std::string dstString;
+			JSON::deserializeValue(srcStream, &dstString, options);
+			(*dstValue) = std::bitset<TBitsetSize>(dstString);
 		}
 		else
 		{
-			JSON::deserializeValue(stream, (std::string*)nullptr);
+			// You must handle the case value is null, because this is used to check json validity (functions isValid)
+			JSON::deserializeValue(srcStream, static_cast<std::string*>(nullptr), options);
 		}
 	}
 }
@@ -108,16 +123,21 @@ void testCustomDeSerializationFunctions()
 # (De)serialization from File
 
 ```cpp
-#include <fstream>
+#include <cassert>
 #include "json.h"
 
-// Write to file
-std::map<std::string, std::string> data { { "Field", "Value" } };
-JSON::serialize(std::ofstream("data.json"), data);
+void testDeSerializeFromFile()
+{
+	// Write to file
+	std::map<std::string, std::string> data { { "Field", "Value" } };
+	JSON::serialize(std::ofstream("data333.json"), data);
 
-// Read from file
-std::map<std::string, std::string> data2;
-JSON::deserialize(std::ifstream("data.json"), data2);
+	// Read from file
+	std::map<std::string, std::string> data2;
+	JSON::deserialize(std::ifstream("data333.json"), data2);
+
+	assert(data == data2);
+}
 ```
 
 # Not typed (de)serialization
@@ -125,23 +145,42 @@ JSON::deserialize(std::ifstream("data.json"), data2);
 If you want to keep dynamic JSON data in your program, you can use the class `JSON::Value`.
 
 ```cpp
-auto jsValue = JSON::Value::createObject();
-jsValue.getObject()["PI"] = JSON::Value(3.14159);
-int32_t precision = 3;
-std::string json = JSON::serialize(jsValue, JSON::Options(precision));
+#include "json.h"
 
-std::cout << json << std::endl; // {"PI":3.14}
-
-JSON::Value jsValue2;
-JSON::deserialize(json, jsValue2);
-
-if (jsValue2 == JSON::Type::Object)
+void testNotTypedDeSerialization()
 {
-	auto it = jsValue2.getObject().find("PI");
-	if (it != jsValue2.getObject().end())
+	std::string json;
+
+	// Serialize
 	{
-		float pi = (float)it->second.getNumberF();
-		std::cout << pi << std::endl; // 3.14
+		auto jsValue = JSON::Value::createObject();
+		jsValue.getObject()["PI"] = JSON::Value(3.14159);
+		int32_t precision = 3;
+		json = JSON::serialize(jsValue, JSON::Options(precision));
+	}
+
+	std::cout << json << std::endl; // {"PI":3.14}
+
+	// Deserialize
+	{
+		JSON::Value jsValue2;
+		JSON::deserialize(json, jsValue2);
+
+		// Check and get data
+		if (jsValue2.isObject())
+		{
+			auto jsObject2 = jsValue2.getObject();
+			auto it = jsObject2.find("PI");
+			if (it != jsObject2.end())
+			{
+				auto jsInnerValue = it->second;
+				if (jsInnerValue.isNumberF())
+				{
+					float pi = static_cast<float>(jsInnerValue.getNumberF());
+					std::cout << pi << std::endl; // 3.14
+				}
+			}
+		}
 	}
 }
 ```

@@ -31,7 +31,6 @@
     <ClInclude Include="src\json_definitions.h" />
     <ClInclude Include="src\json_implementations.h" />
     <ClInclude Include="src\json_unicode.h" />
-    <ClInclude Include="src\optional.polyfill.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -127,7 +126,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>5051;4068</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>src</AdditionalIncludeDirectories>
     </ClCompile>
@@ -171,7 +170,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>5051;4068</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>src</AdditionalIncludeDirectories>
     </ClCompile>

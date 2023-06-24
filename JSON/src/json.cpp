@@ -694,6 +694,21 @@ namespace JSON
 		return type == Type::Boolean;
 	}
 
+	bool Value::isNumberI() const
+	{
+		return type == Type::NumberI;
+	}
+
+	bool Value::isNumberU() const
+	{
+		return type == Type::NumberU;
+	}
+
+	bool Value::isNumberF() const
+	{
+		return type == Type::NumberF;
+	}
+
 	bool Value::isNumber() const
 	{
 		return type == Type::NumberI || type == Type::NumberU || type == Type::NumberF;

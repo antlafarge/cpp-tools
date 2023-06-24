@@ -40,9 +40,6 @@
     <ClInclude Include="src\json_implementations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\optional.polyfill.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\json_unicode.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -368,6 +368,12 @@ namespace JSON
 
 		bool isBoolean() const;
 
+		bool isNumberI() const;
+
+		bool isNumberU() const;
+
+		bool isNumberF() const;
+
 		bool isNumber() const;
 
 		bool isString() const;
