@@ -121,6 +121,8 @@ void encodeData()
     {
         printf("Base64::encode failed (error %i)\n", (uint32_t)result);
     }
+    
+	delete[] encodedData;
 }
 
 void decodeData()
@@ -140,6 +142,8 @@ void decodeData()
     {
         printf("Base64::decode failed (error %i)\n", (uint32_t)result);
     }
+
+	delete[] decodedData;
 }
 ```
 
