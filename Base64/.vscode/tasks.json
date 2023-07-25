@@ -11,11 +11,11 @@
                 "-Wextra",
                 "-Wno-unknown-pragmas",
                 "-g",
-                "-Isrc",
-                "src/*.cpp",
-                "${file}",
+                "-I${workspaceFolder}\\src",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "${workspaceFolder}\\src\\*.cpp",
+                "${file}"
             ],
             "options": {
                 "cwd": "${fileDirname}"
