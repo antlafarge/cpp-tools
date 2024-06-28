@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Usage : ./build-g++-ppc64.sh
+# Build only : ./build-g++-ppc64.sh build
+# Run only : ./build-g++-ppc64.sh run
+
 if [[ "$1" == "build" || $# -eq 0 ]]; then
     echo "========= Build ========="
     powerpc64-linux-gnu-g++ \
