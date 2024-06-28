@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Usage : ./build-g++.sh
+# Build only : ./build-g++.sh build
+# Run only : ./build-g++.sh run
+
 if [[ "$1" == "build" || $# -eq 0 ]]; then
     echo "========= Build ========="
     g++ \
