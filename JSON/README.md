@@ -128,11 +128,11 @@ void testDeSerializeFromFile()
 {
 	// Write to file
 	std::map<std::string, std::string> data { { "Field", "Value" } };
-	JSON::serialize(std::ofstream("data333.json"), data);
+	JSON::serialize(std::ofstream("data.json"), data);
 
 	// Read from file
 	std::map<std::string, std::string> data2;
-	JSON::deserialize(std::ifstream("data333.json"), data2);
+	JSON::deserialize(std::ifstream("data.json"), data2);
 
 	assert(data == data2);
 }
