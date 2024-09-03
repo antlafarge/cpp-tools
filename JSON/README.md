@@ -40,16 +40,14 @@ void testDeSerialization()
 	// Serialization
 	{
 		Sample object{ {}, { true }, 3.1415926535, "Haste makes waste", { 0,1,1,2,3,5,8,13,21,34 } };
-		Sample object2{ {}, { true }, 3.1415926535, "Haste makes waste", { 0,1,1,2,3,5,8,13,21,34 } };
-
 		json = JSON::serialize(object);
 		std::cout << json << std::endl; // {"NullField":null,"WorkingField":true,"PiField":3.14,"ProverbField":"Haste makes waste","FibonacciField":[0,1,1,2,3,5,8,13,21,34]}
 	}
 
 	// Deserialization
 	{
-		Sample object2;
-		JSON::deserialize(json, object2);
+		Sample object;
+		JSON::deserialize(json, object);
 	}
 }
 ```
